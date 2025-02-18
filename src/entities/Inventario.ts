@@ -12,6 +12,7 @@ export class Inventario {
   @Column({ type: "integer" })
   cantidad!: number;
 
+  //Fecha
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   fecha_actualizacion!: Date;
 }
