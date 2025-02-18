@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
+<<<<<<< HEAD
+import { AppDataSource } from "app/lib/data-source";
+import { Animal } from "app/entities/Animales";
+
+=======
 import { AppDataSource } from "app/lib/data-source"; // Ajuste en la importación
 import { Animal } from "app/entities/Animales"; // Ajuste en la importación
 
 // ✅ Conectar la base de datos antes de cada operación
+>>>>>>> c8e369c6a64d7c2ec8f36bcd4bd0aa48e16ded26
 async function connectDB() {
   if (!AppDataSource.isInitialized) {
     await AppDataSource.initialize();
@@ -10,7 +16,10 @@ async function connectDB() {
   }
 }
 
+<<<<<<< HEAD
+=======
 // ✅ Obtener todos los animales (GET /api/animales)
+>>>>>>> c8e369c6a64d7c2ec8f36bcd4bd0aa48e16ded26
 export async function GET() {
   try {
     await connectDB();
@@ -27,7 +36,10 @@ export async function GET() {
   }
 }
 
+<<<<<<< HEAD
+=======
 // ✅ Crear un nuevo animal (POST /api/animales)
+>>>>>>> c8e369c6a64d7c2ec8f36bcd4bd0aa48e16ded26
 export async function POST(req: Request) {
   try {
     await connectDB();
@@ -54,7 +66,10 @@ export async function POST(req: Request) {
   }
 }
 
+<<<<<<< HEAD
+=======
 // ✅ Actualizar un animal por ID (PUT /api/animales)
+>>>>>>> c8e369c6a64d7c2ec8f36bcd4bd0aa48e16ded26
 export async function PUT(req: Request) {
   try {
     await connectDB();
@@ -90,7 +105,10 @@ export async function PUT(req: Request) {
   }
 }
 
+<<<<<<< HEAD
+=======
 // ✅ Eliminar un animal por ID (DELETE /api/animales)
+>>>>>>> c8e369c6a64d7c2ec8f36bcd4bd0aa48e16ded26
 export async function DELETE(req: Request) {
   try {
     await connectDB();
