@@ -1,12 +1,7 @@
 import "reflect-metadata";
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany,
-  Unique,
-} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Categoria } from "./Categoria"; // Importar la entidad Categoria
+import { Proveedor } from "./Proveedor"; // Importar la entidad Proveedor
 
 @Entity("productos")
 export class Producto {
@@ -19,10 +14,10 @@ export class Producto {
   @Column({ type: "text" })
   descripcion!: string;
 
-  @Column({ type: "decimal" })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   precio_compra!: number;
 
-  @Column({ type: "decimal" })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   precio_venta!: number;
 
   @ManyToOne(() => Categoria, (categoria) => categoria.productos)

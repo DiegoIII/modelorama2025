@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { DetalleVentas } from "./DetalleVentas"; // Asegúrate de importar la entidad DetalleVentas
+import { DetalleVenta } from "./DetalleVenta"; // Asegúrate de importar la entidad DetalleVenta
 
 @Entity("ventas")
 export class Ventas {
@@ -12,6 +12,6 @@ export class Ventas {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false })
   total_venta!: number;
 
-  @OneToMany(() => DetalleVentas, (detalle) => detalle.venta)
-  detalles!: DetalleVentas[];
+  @OneToMany(() => DetalleVenta, (detalle) => detalle.venta)
+  detalles!: DetalleVenta[];
 }
