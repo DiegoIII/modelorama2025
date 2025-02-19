@@ -1,5 +1,5 @@
 import "reflect-metadata"; // IMPORTA ESTO PRIMERO
-import { Entity, PrimaryGeneratedColumn, Column, Unique } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 
 @Entity("inventario")
 export class Inventario {

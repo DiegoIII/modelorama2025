@@ -4,7 +4,7 @@ import { Categoria } from "./Categoria"; // Importar la entidad Categoria
 import { Proveedor } from "./Proveedor"; // Importar la entidad Proveedor
 
 @Entity("productos")
-export class Producto {
+export class Productos {
   @PrimaryGeneratedColumn()
   producto_id!: number;
 
