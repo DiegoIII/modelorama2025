@@ -7,9 +7,10 @@ import {
   OneToMany,
   JoinColumn,
 } from "typeorm";
-import { Categoria } from "./Categoria";
-import { Proveedor } from "./Proveedores";
-import { DetalleVenta } from "./DetalleVenta";
+import { Categoria } from "./Categoria"; // Importar la entidad Categoria
+import { Proveedor } from "./Proveedores"; // Importar la entidad Proveedor
+import { DetalleCompra } from "./DetalleCompra"; // Importar la entidad DetalleCompra
+import { DetalleVenta } from "./DetalleVenta"; // Importar la entidad DetalleVenta
 
 @Entity("productos")
 export class Productos {
@@ -36,8 +37,11 @@ export class Productos {
   @JoinColumn({ name: "proveedor_id" })
   proveedor!: Proveedor;
 
+  @OneToMany(() => DetalleCompra, (detalleCompra) => detalleCompra.producto)
+  detallesCompra!: DetalleCompra[]; // Relación inversa con DetalleCompra
+
   @OneToMany(() => DetalleVenta, (detalleVenta) => detalleVenta.producto)
-  detalles!: DetalleVenta[];
+  detalles!: DetalleVenta[]; // Relación inversa con DetalleVenta
 
   @Column({ type: "integer" })
   stock_minimo!: number;
