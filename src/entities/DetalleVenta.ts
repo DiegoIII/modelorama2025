@@ -25,9 +25,9 @@ export class DetalleVenta {
   @Column({ type: "integer" })
   cantidad!: number;
 
-  @Column({ type: "decimal" })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   precio_unitario!: number;
 
-  @Column({ type: "decimal" })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   subtotal!: number;
 }
