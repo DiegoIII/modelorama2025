@@ -1,17 +1,14 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Gastos } from "./Gastos"; // Asegúrate de importar la entidad Gastos
+import type { Gastos } from "./Gastos"; // Usar import type
 
-@Entity("categories_gastos")
+@Entity("categorias_gastos")
 export class CategoriasGastos {
   @PrimaryGeneratedColumn()
   categoria_gasto_id!: number;
 
-  @Column({ type: "varchar", length: 255, nullable: false })
+  @Column({ type: "varchar", length: 100 })
   nombre_categoria_gasto!: string;
 
-  @Column({ type: "timestamp", nullable: false })
-  created_at!: Date;
-
-  @OneToMany(() => Gastos, (gasto) => gasto.categoria)
+  @OneToMany("Gastos", (gasto: Gastos) => gasto.categoriaGasto)
   gastos!: Gastos[];
 }

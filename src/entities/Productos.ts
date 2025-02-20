@@ -1,16 +1,15 @@
-import "reflect-metadata";
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   OneToMany,
-  JoinColumn,
+  JoinColumn, // Importar JoinColumn
 } from "typeorm";
-import { Categoria } from "./Categoria"; // Importar la entidad Categoria
-import { Proveedor } from "./Proveedores"; // Importar la entidad Proveedor
-import { DetalleCompra } from "./DetalleCompra"; // Importar la entidad DetalleCompra
-import { DetalleVenta } from "./DetalleVenta"; // Importar la entidad DetalleVenta
+import type { Categoria } from "./Categoria";
+import type { Proveedor } from "./Proveedores";
+import type { DetalleCompra } from "./DetalleCompra";
+import type { DetalleVenta } from "./DetalleVenta";
 
 @Entity("productos")
 export class Productos {
@@ -29,19 +28,25 @@ export class Productos {
   @Column({ type: "decimal", precision: 10, scale: 2 })
   precio_venta!: number;
 
-  @ManyToOne(() => Categoria, (categoria) => categoria.productos)
-  @JoinColumn({ name: "categoria_id" })
+  @ManyToOne("Categoria", (categoria: Categoria) => categoria.productos)
+  @JoinColumn({ name: "categoria_id" }) // Usar JoinColumn
   categoria!: Categoria;
 
-  @ManyToOne(() => Proveedor, (proveedor) => proveedor.productos)
-  @JoinColumn({ name: "proveedor_id" })
+  @ManyToOne("Proveedor", (proveedor: Proveedor) => proveedor.productos)
+  @JoinColumn({ name: "proveedor_id" }) // Usar JoinColumn
   proveedor!: Proveedor;
 
-  @OneToMany(() => DetalleCompra, (detalleCompra) => detalleCompra.producto)
-  detallesCompra!: DetalleCompra[]; // Relación inversa con DetalleCompra
+  @OneToMany(
+    "DetalleCompra",
+    (detalleCompra: DetalleCompra) => detalleCompra.producto
+  )
+  detallesCompra!: DetalleCompra[];
 
-  @OneToMany(() => DetalleVenta, (detalleVenta) => detalleVenta.producto)
-  detalles!: DetalleVenta[]; // Relación inversa con DetalleVenta
+  @OneToMany(
+    "DetalleVenta",
+    (detalleVenta: DetalleVenta) => detalleVenta.producto
+  )
+  detalles!: DetalleVenta[];
 
   @Column({ type: "integer" })
   stock_minimo!: number;

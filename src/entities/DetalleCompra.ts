@@ -1,29 +1,24 @@
-import "reflect-metadata";
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  JoinColumn,
+  JoinColumn, // Importar JoinColumn
 } from "typeorm";
-import { Compra } from "./Compra";
-import { Productos } from "./Productos";
+import type { Compra } from "./Compra";
+import type { Productos } from "./Productos";
 
-@Entity("detalle_compras") // Nombre de la tabla en la BD
+@Entity("detalle_compras")
 export class DetalleCompra {
   @PrimaryGeneratedColumn()
   detalle_compra_id!: number;
 
-  @ManyToOne(() => Compra, (compra) => compra.detallesCompra, {
-    nullable: false,
-  })
-  @JoinColumn({ name: "compra_id" })
+  @ManyToOne("Compra", (compra: Compra) => compra.detallesCompra)
+  @JoinColumn({ name: "compra_id" }) // Usar JoinColumn
   compra!: Compra;
 
-  @ManyToOne(() => Productos, (producto) => producto.detallesCompra, {
-    nullable: false,
-  })
-  @JoinColumn({ name: "producto_id" })
+  @ManyToOne("Productos", (producto: Productos) => producto.detallesCompra)
+  @JoinColumn({ name: "producto_id" }) // Usar JoinColumn
   producto!: Productos;
 
   @Column({ type: "int", nullable: false })

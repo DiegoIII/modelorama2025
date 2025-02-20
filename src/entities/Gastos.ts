@@ -3,25 +3,29 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  JoinColumn,
+  OneToMany,
+  JoinColumn, // Importar JoinColumn
 } from "typeorm";
-import { CategoriasGastos } from "./CategoriasGastos"; // Asegúrate de importar la entidad CategoriasGastos
+import type { CategoriasGastos } from "./CategoriasGastos"; // Usar import type
 
 @Entity("gastos")
 export class Gastos {
   @PrimaryGeneratedColumn()
   gasto_id!: number;
 
-  @Column({ type: "varchar", length: 255, nullable: false })
+  @Column({ type: "varchar", length: 255 })
   description!: string;
 
-  @Column({ type: "decimal", precision: 10, scale: 2, nullable: false })
+  @Column({ type: "decimal", precision: 10, scale: 2 })
   monto!: number;
 
-  @Column({ type: "timestamp", nullable: false })
+  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   fecha_gasto!: Date;
 
-  @ManyToOne(() => CategoriasGastos, (categoria) => categoria.gastos)
+  @ManyToOne(
+    "CategoriasGastos",
+    (categoria: CategoriasGastos) => categoria.gastos
+  )
   @JoinColumn({ name: "categoria_gasto_id" })
-  categoria!: CategoriasGastos;
+  categoriaGasto!: CategoriasGastos;
 }

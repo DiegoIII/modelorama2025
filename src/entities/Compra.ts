@@ -1,24 +1,21 @@
-import "reflect-metadata";
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   OneToMany,
-  JoinColumn,
+  JoinColumn, // Importar JoinColumn
 } from "typeorm";
-import { Proveedor } from "./Proveedores";
-import { DetalleCompra } from "./DetalleCompra";
+import type { Proveedor } from "./Proveedores";
+import type { DetalleCompra } from "./DetalleCompra";
 
-@Entity("compras") // Nombre de la tabla en la BD
+@Entity("compras")
 export class Compra {
   @PrimaryGeneratedColumn()
   compra_id!: number;
 
-  @ManyToOne(() => Proveedor, (proveedor) => proveedor.compras, {
-    nullable: false,
-  })
-  @JoinColumn({ name: "proveedor_id" })
+  @ManyToOne("Proveedor", (proveedor: Proveedor) => proveedor.compras)
+  @JoinColumn({ name: "proveedor_id" }) // Usar JoinColumn
   proveedor!: Proveedor;
 
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
@@ -27,6 +24,9 @@ export class Compra {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: false })
   total_compra!: number;
 
-  @OneToMany(() => DetalleCompra, (detalleCompra) => detalleCompra.compra)
+  @OneToMany(
+    "DetalleCompra",
+    (detalleCompra: DetalleCompra) => detalleCompra.compra
+  )
   detallesCompra!: DetalleCompra[];
 }
