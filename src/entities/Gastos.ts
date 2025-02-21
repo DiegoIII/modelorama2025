@@ -3,8 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
-  JoinColumn, // Importar JoinColumn
+  JoinColumn,
 } from "typeorm";
 import type { CategoriasGastos } from "./CategoriasGastos"; // Usar import type
 
