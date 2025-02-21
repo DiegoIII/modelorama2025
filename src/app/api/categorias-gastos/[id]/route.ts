@@ -17,6 +17,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("Iniciando actualización de categoría de gastos...");
+
     // Validar que el ID sea un número válido
     const categoriaGastoId = Number(params.id);
     if (isNaN(categoriaGastoId)) {
@@ -57,6 +59,53 @@ export async function PUT(
     console.error("Error en PUT /api/categorias-gastos/[id]:", error);
     return NextResponse.json(
       { success: false, message: "Error actualizando la categoría de gastos" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Eliminar una categoría de gastos por ID (DELETE)
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    console.log("Iniciando eliminación de categoría de gastos...");
+
+    // Validar que el ID sea un número válido
+    const categoriaGastoId = Number(params.id);
+    if (isNaN(categoriaGastoId)) {
+      return NextResponse.json(
+        { success: false, message: "ID inválido" },
+        { status: 400 }
+      );
+    }
+
+    // Buscar la categoría de gastos en la base de datos
+    const categoriaGasto = await categoriasGastosRepo.findOneBy({
+      categoria_gasto_id: categoriaGastoId,
+    });
+
+    if (!categoriaGasto) {
+      return NextResponse.json(
+        { success: false, message: "Categoría de gastos no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Eliminar la categoría de gastos
+    await categoriasGastosRepo.remove(categoriaGasto);
+
+    return NextResponse.json({
+      success: true,
+      message: "Categoría de gastos eliminada correctamente",
+    });
+  } catch (error) {
+    console.error("Error en DELETE /api/categorias-gastos/[id]:", error);
+    return NextResponse.json(
+      { success: false, message: "Error eliminando la categoría de gastos" },
       { status: 500 }
     );
   }
