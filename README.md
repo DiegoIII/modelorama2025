@@ -1,32 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Proyecto de Gestión de Ventas
+Este proyecto es una API RESTful desarrollada con Next.js, TypeScript y TypeORM para gestionar ventas, productos, categorías y proveedores. La API permite realizar operaciones CRUD (Crear, Leer, Actualizar, Eliminar) sobre estas entidades.
 
-## Getting Started
+Tabla de Contenidos
+Requisitos
 
-First, run the development server:
+Instalación
 
-```bash
+Configuración
+
+Ejecución
+
+Endpoints
+
+Contribución
+
+Licencia
+
+Requisitos
+Node.js (v16 o superior)
+
+npm (v7 o superior)
+
+MySQL (o cualquier otra base de datos compatible con TypeORM)
+
+Instalación
+Clona el repositorio:
+
+bash
+Copy
+git clone https://github.com/tu-usuario/tu-repositorio.git
+cd tu-repositorio
+Instala las dependencias:
+
+bash
+Copy
+npm install
+Configuración
+Crea un archivo .env en la raíz del proyecto y configura las variables de entorno necesarias:
+
+env
+Copy
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=tu-contraseña
+DB_NAME=nombre_de_tu_base_de_datos
+Asegúrate de que la base de datos esté creada y accesible con las credenciales proporcionadas.
+
+Ejecución
+Inicia el servidor de desarrollo:
+
+bash
+Copy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+La API estará disponible en http://localhost:3000.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Endpoints
+Productos
+GET /api/productos - Obtener todos los productos.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+GET /api/productos/:id - Obtener un producto por ID.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+POST /api/productos - Crear un nuevo producto.
 
-## Learn More
+PUT /api/productos/:id - Actualizar un producto existente.
 
-To learn more about Next.js, take a look at the following resources:
+DELETE /api/productos/:id - Eliminar un producto.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ventas
+GET /api/ventas - Obtener todas las ventas.
 
+GET /api/ventas/:id - Obtener una venta por ID.
+
+POST /api/ventas - Crear una nueva venta.
+
+PUT /api/ventas/:id - Actualizar una venta existente.
+
+DELETE /api/ventas/:id - Eliminar una venta.
+
+Categorías
+GET /api/categorias - Obtener todas las categorías.
+
+GET /api/categorias/:id - Obtener una categoría por ID.
+
+POST /api/categorias - Crear una nueva categoría.
+
+PUT /api/categorias/:id - Actualizar una categoría existente.
+
+DELETE /api/categorias/:id - Eliminar una categoría.
+
+Proveedores
+GET /api/proveedores - Obtener todos los proveedores.
+
+GET /api/proveedores/:id - Obtener un proveedor por ID.
+
+POST /api/proveedores - Crear un nuevo proveedor.
+
+PUT /api/proveedores/:id - Actualizar un proveedor existente.
+
+DELETE /api/proveedores/:id - Eliminar un proveedor.
+
+Contribución
+Haz un fork del repositorio.
+
+Crea una nueva rama (git checkout -b feature/nueva-funcionalidad).
+
+Realiza tus cambios y haz commit (git commit -am 'Añade nueva funcionalidad').
+
+Haz push a la rama (git push origin feature/nueva-funcionalidad).
+
+Abre un Pull Request.
+
+Licencia
+Este proyecto está licenciado bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles.
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
