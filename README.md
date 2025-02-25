@@ -15,6 +15,5 @@ Este proyecto es una API RESTful desarrollada con Next.js, TypeScript y TypeORM 
 - **Next.js:** Framework de React para construir aplicaciones web y APIs.
 - **TypeScript:** Lenguaje de programación que añade tipos estáticos a JavaScript.
 - **TypeORM:** ORM (Object-Relational Mapping) para TypeScript y JavaScript.
-- **MySQL:** Base de datos relacional utilizada para almacenar la información.
 - **Postman:** Herramienta para probar las APIs.
 
