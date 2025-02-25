@@ -1,3 +1,4 @@
+import Footer from "app/components/Footer";
 import Navbar from "app/components/Navbar";
 import React, { ReactNode } from "react";
 
@@ -9,7 +10,8 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <>
       <Navbar />
-      <div>{children}</div>
+      <div className="mt -m-4">{children}</div>
+      <Footer />
     </>
   );
 };
