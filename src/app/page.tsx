@@ -1,23 +1,16 @@
-"use client";
+import Navbar from "app/components/Navbar";
+import React from "react";
+import Layout from "app/layout/Layout";
 
-import { useState } from "react";
-
-export default function Home() {
-  const [data, setData] = useState({ saludo: "" });
-
-  const saludoBack = () => {
-    fetch("/api/saludar")
-      .then((res) => res.json())
-      .then((data) => {
-        setData(data);
-      });
-  };
-
+const PageLayout = () => {
   return (
     <>
-      <h1>Mi proyecto</h1>
-      <button onClick={saludoBack}>Saludar</button>
-      <h2>{data.saludo}</h2>
+      <Layout>
+        <h1>Hola</h1>
+        <h2>Prueba</h2>
+      </Layout>
     </>
   );
-}
+};
+
+export default PageLayout;
