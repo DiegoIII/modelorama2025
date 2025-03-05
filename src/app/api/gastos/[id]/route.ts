@@ -1,28 +1,16 @@
-import { Gastos } from "app/entities/Gastos";
-import { CategoriasGastos } from "app/entities/CategoriasGastos";
-import { AppDataSource } from "app/lib/data-source";
+import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// Inicializar la conexión a la base de datos
-if (!AppDataSource.isInitialized) {
-  await AppDataSource.initialize();
-}
-
-const gastosRepo = AppDataSource.getRepository(Gastos);
-const categoriasGastosRepo = AppDataSource.getRepository(CategoriasGastos);
-
 /**
- * Actualizar un gasto por ID (PUT)
+ * Actualizar un gasto (PATCH)
  */
-export async function PUT(
+export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("Iniciando actualización de gasto...");
+    const gastoId = parseInt(params.id);
 
-    // Validar que el ID sea un número válido
-    const gastoId = Number(params.id);
     if (isNaN(gastoId)) {
       return NextResponse.json(
         { success: false, message: "ID inválido" },
@@ -30,45 +18,50 @@ export async function PUT(
       );
     }
 
-    // Buscar el gasto en la base de datos
-    const gasto = await gastosRepo.findOneBy({ gasto_id: gastoId });
+    const body = await req.json();
+    const { descripcion, monto, categoria_gasto_id } = body;
 
-    if (!gasto) {
+    // Validar que al menos un campo esté presente para actualizar
+    if (!descripcion && !monto && !categoria_gasto_id) {
       return NextResponse.json(
-        { success: false, message: "Gasto no encontrado" },
-        { status: 404 }
+        {
+          success: false,
+          message: "Debe proporcionar al menos un campo para actualizar",
+        },
+        { status: 400 }
       );
     }
 
-    // Obtener datos del body
-    const { description, monto, categoria_gasto_id } = await req.json();
+    // Validar si la categoría de gasto existe (si se proporciona)
+    if (categoria_gasto_id) {
+      const categoriaExiste = await prisma.categoriasGastos.findUnique({
+        where: { categoria_gasto_id },
+      });
 
-    // Buscar la categoría de gastos en la base de datos
-    const categoriaGasto = await categoriasGastosRepo.findOneBy({
-      categoria_gasto_id: categoria_gasto_id,
-    });
-
-    if (!categoriaGasto) {
-      return NextResponse.json(
-        { success: false, message: "Categoría de gastos no encontrada" },
-        { status: 404 }
-      );
+      if (!categoriaExiste) {
+        return NextResponse.json(
+          { success: false, message: "Categoría de gasto no encontrada" },
+          { status: 404 }
+        );
+      }
     }
 
-    // Actualizar solo los campos proporcionados
-    gasto.description = description;
-    gasto.monto = monto;
-    gasto.categoriaGasto = categoriaGasto;
-
-    // Guardar los cambios en la base de datos
-    const gastoActualizado = await gastosRepo.save(gasto);
-
-    return NextResponse.json({
-      success: true,
-      data: gastoActualizado,
+    // Actualizar el gasto
+    const gastoActualizado = await prisma.gastos.update({
+      where: { gasto_id: gastoId },
+      data: {
+        descripcion,
+        monto,
+        categoria_gasto_id,
+      },
     });
+
+    return NextResponse.json(
+      { success: true, data: gastoActualizado },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("Error en PUT /api/gastos/[id]:", error);
+    console.error("Error en PATCH /api/gastos/[id]:", error);
     return NextResponse.json(
       { success: false, message: "Error actualizando el gasto" },
       { status: 500 }
@@ -77,17 +70,15 @@ export async function PUT(
 }
 
 /**
- * Eliminar un gasto por ID (DELETE)
+ * Eliminar un gasto (DELETE)
  */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("Iniciando eliminación de gasto...");
+    const gastoId = parseInt(params.id);
 
-    // Validar que el ID sea un número válido
-    const gastoId = Number(params.id);
     if (isNaN(gastoId)) {
       return NextResponse.json(
         { success: false, message: "ID inválido" },
@@ -95,10 +86,12 @@ export async function DELETE(
       );
     }
 
-    // Buscar el gasto en la base de datos
-    const gasto = await gastosRepo.findOneBy({ gasto_id: gastoId });
+    // Verificar si el gasto existe antes de eliminarlo
+    const gastoExiste = await prisma.gastos.findUnique({
+      where: { gasto_id: gastoId },
+    });
 
-    if (!gasto) {
+    if (!gastoExiste) {
       return NextResponse.json(
         { success: false, message: "Gasto no encontrado" },
         { status: 404 }
@@ -106,12 +99,14 @@ export async function DELETE(
     }
 
     // Eliminar el gasto
-    await gastosRepo.remove(gasto);
-
-    return NextResponse.json({
-      success: true,
-      message: "Gasto eliminado correctamente",
+    await prisma.gastos.delete({
+      where: { gasto_id: gastoId },
     });
+
+    return NextResponse.json(
+      { success: true, message: "Gasto eliminado" },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error en DELETE /api/gastos/[id]:", error);
     return NextResponse.json(

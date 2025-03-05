@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Productos {
+  producto_id  Int     @id @default(autoincrement())
+  nombre       String
+  descripcion  String?
+  precio_compra Decimal
+  precio_venta Decimal
+  categoria_id Int
+  proveedor_id Int
+  stock_minimo Int
+  stock_maximo Int
+  created_at   DateTime @default(now())
+
+  categoria   Categorias @relation(fields: [categoria_id], references: [categoria_id])
+  proveedor   Proveedores @relation(fields: [proveedor_id], references: [proveedor_id])
+  detalleVentas DetalleVentas[]
+  detalleCompras DetalleCompras[]
+  inventario    Inventario?
+}
+
+model Categorias {
+  categoria_id   Int    @id @default(autoincrement())
+  nombre_categoria String
+  created_at     DateTime @default(now())
+
+  productos Productos[]
+}
+
+model Proveedores {
+  proveedor_id  Int    @id @default(autoincrement())
+  nombre_proveedor String
+  contacto      String?
+  telefono      String?
+  email         String?
+  created_at    DateTime @default(now())
+
+  productos Productos[]
+  compras    Compras[]  // Relación inversa con Compras
+}
+
+model Ventas {
+  venta_id     Int      @id @default(autoincrement())
+  fecha_venta  DateTime @default(now())
+  total_venta  Decimal
+  detalleVentas DetalleVentas[]
+}
+
+model DetalleVentas {
+  detalle_venta_id Int @id @default(autoincrement())
+  venta_id     Int
+  producto_id  Int
+  cantidad     Int
+  precio_unitario Decimal
+  subtotal     Decimal
+
+  venta       Ventas @relation(fields: [venta_id], references: [venta_id])
+  producto    Productos @relation(fields: [producto_id], references: [producto_id])
+}
+
+model Compras {
+  compra_id    Int      @id @default(autoincrement())
+  proveedor_id Int
+  fecha_compra DateTime @default(now())
+  total_compra Decimal
+
+  proveedor    Proveedores @relation(fields: [proveedor_id], references: [proveedor_id])
+  detalleCompras DetalleCompras[]
+}
+
+model DetalleCompras {
+  detalle_compra_id Int @id @default(autoincrement())
+  compra_id    Int
+  producto_id  Int
+  cantidad     Int
+  precio_unitario Decimal
+  subtotal     Decimal
+
+  compra      Compras @relation(fields: [compra_id], references: [compra_id])
+  producto    Productos @relation(fields: [producto_id], references: [producto_id])
+}
+
+model Inventario {
+  inventario_id Int @id @default(autoincrement())
+  producto_id   Int @unique  // Se asegura que un producto solo tenga un registro en inventario
+  cantidad      Int
+  fecha_actualizacion DateTime @default(now())
+
+  producto Productos @relation(fields: [producto_id], references: [producto_id])
+}
+
+model Gastos {
+  gasto_id          Int     @id @default(autoincrement())
+  descripcion       String
+  monto            Decimal
+  fecha_gasto      DateTime @default(now())
+  categoria_gasto_id Int
+
+  categoriaGasto CategoriasGastos @relation(fields: [categoria_gasto_id], references: [categoria_gasto_id])
+}
+
+model CategoriasGastos {
+  categoria_gasto_id Int    @id @default(autoincrement())
+  nombre_categoria_gasto String
+  created_at         DateTime @default(now())
+
+  gastos Gastos[]
+}
