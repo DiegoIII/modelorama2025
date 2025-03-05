@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 const Navbar: React.FC = () => {
@@ -6,26 +7,11 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto flex justify-between items-center">
         <div className="text-white text-lg font-bold">MiLogo</div>
         <ul className="flex space-x-4">
-          <li>
-            <a href="#" className="text-white hover:text-gray-200">
-              Inicio
-            </a>
-          </li>
-          <li>
-            <a href="#" className="text-white hover:text-gray-200">
-              Acerca de
-            </a>
-          </li>
-          <li>
-            <a href="#" className="text-white hover:text-gray-200">
-              Servicios
-            </a>
-          </li>
-          <li>
-            <a href="#" className="text-white hover:text-gray-200">
-              Contacto
-            </a>
-          </li>
+          <div className="hidden md:flex space-x-6"></div>
+          <Link href={"/"}>Inicio</Link>
+          <Link href={"/productos"}>productos</Link>
+          <Link href={"/inventarios"}>inventarios</Link>
+          <Link href={"/detalleventas"}>detalleventas</Link>
         </ul>
       </div>
     </nav>
