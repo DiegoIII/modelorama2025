@@ -113,3 +113,11 @@ model CategoriasGastos {
 
   gastos Gastos[]
 }
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  name     String
+  created_at DateTime @default(now())
+}
