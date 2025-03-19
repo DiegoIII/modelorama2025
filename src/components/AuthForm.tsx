@@ -1,5 +1,5 @@
 "use client";
-import useAuthStore from "app/app/stores/useAuthStore";
+import useAuthStore from "app/stores/useAuthStore";
 import { useState } from "react";
 
 export default function AuthForm() {
