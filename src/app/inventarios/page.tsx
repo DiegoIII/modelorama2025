@@ -5,7 +5,6 @@ import Layout from "app/layout/Layout";
 import InventarioForm from "app/components/inventario/InventarioForm";
 import InventarioCard from "app/components/inventario/InventarioCard";
 import { Inventario } from "@/types/inventario"; // Importa la interfaz
-import { getInventarios } from "../api/inventario.api";
 
 const InventarioPage = () => {
   const [inventario, setInventario] = useState<Inventario[]>([]);
@@ -15,11 +14,19 @@ const InventarioPage = () => {
     fetchInventario();
   }, []);
 
+  // Función para obtener inventarios desde una API (ajustada según tu necesidad)
   const fetchInventario = async () => {
     setLoading(true);
-    const response = await getInventarios();
-    if (response.success) {
-      setInventario(response.data);
+    try {
+      const response = await fetch("/api/inventarios"); // Ajusta la URL según tu API
+      const data = await response.json();
+      if (data.success) {
+        setInventario(data.data); // Asumiendo que la respuesta tiene el formato adecuado
+      } else {
+        console.error("Error al obtener los inventarios");
+      }
+    } catch (error) {
+      console.error("Error de red o de fetch:", error);
     }
     setLoading(false);
   };

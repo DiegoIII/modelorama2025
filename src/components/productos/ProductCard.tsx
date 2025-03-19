@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { deleteProduct } from "app/app/api/products.api";
 import DeleteProductModal from "./DeleteProductModal";
 
 interface Product {
@@ -25,8 +24,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onDelete }) => {
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    await deleteProduct(product.producto_id);
-    onDelete();
+    try {
+      const response = await fetch(`/api/products/${product.producto_id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el producto");
+      }
+
+      onDelete();
+    } catch (error) {
+      console.error("Error al eliminar el producto:", error);
+    }
     setIsDeleting(false);
   };
 
