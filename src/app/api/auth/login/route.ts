@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "app/lib/prisma";
 
-const SECRET = process.env.JWT_SECRET;
+const SECRET = process.env.JWT_SECRET as string;
 if (!SECRET) {
   throw new Error("La variable de entorno JWT_SECRET no está definida");
 }
