@@ -1,9 +1,31 @@
-import { createProduct } from "app/app/api/products.api";
 import { useState } from "react";
 
 interface ProductFormProps {
   onProductAdded: () => void;
 }
+
+const createProduct = async (productData: any) => {
+  try {
+    const response = await fetch("/api/products", {
+      // Cambia la URL si es necesario.
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(productData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al agregar el producto");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al agregar el producto:", error);
+    throw error;
+  }
+};
 
 const ProductForm: React.FC<ProductFormProps> = ({ onProductAdded }) => {
   const [formData, setFormData] = useState({
@@ -26,19 +48,23 @@ const ProductForm: React.FC<ProductFormProps> = ({ onProductAdded }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createProduct(formData);
-    onProductAdded();
-    setFormData({
-      nombre: "",
-      descripcion: "",
-      precio_compra: "",
-      precio_venta: "",
-      stock_minimo: "",
-      stock_maximo: "",
-      categoria: "",
-      proveedor: "",
-      imagenUrl: "",
-    });
+    try {
+      await createProduct(formData); // Llamar a la función local para crear el producto
+      onProductAdded();
+      setFormData({
+        nombre: "",
+        descripcion: "",
+        precio_compra: "",
+        precio_venta: "",
+        stock_minimo: "",
+        stock_maximo: "",
+        categoria: "",
+        proveedor: "",
+        imagenUrl: "",
+      });
+    } catch (error) {
+      console.error("Error al agregar producto:", error);
+    }
   };
 
   return (

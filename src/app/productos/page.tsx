@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
 import ProductForm from "app/components/productos/ProductForm";
 import ProductCard from "app/components/productos/ProductCard";
-import { getProducts } from "../api/products.api";
 import { Product } from "@/types/products";
+
+const API_URL = "/api/products"; // Ajusta la URL según tu backend
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,22 +18,24 @@ const ProductsPage = () => {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const response = await getProducts();
-    if (response.success) {
-      // 🔹 Modificando los datos como en los archivos anteriores
-      const formattedProducts: Product[] = response.data.map(
-        (product: any) => ({
-          id: product.id,
-          nombre: product.nombre,
-          descripcion: product.descripcion,
-          precio: parseFloat(product.precio), // Asegurar que el precio sea un número
-          stock: parseInt(product.stock, 10), // Convertir el stock a número entero
-          categoria: product.categoria,
-          imagenUrl: product.imagenUrl || "/placeholder.png", // Imagen por defecto si no tiene
-        })
-      );
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error("Error al obtener productos");
+
+      const data = await response.json();
+      const formattedProducts: Product[] = data.map((product: any) => ({
+        id: product.id,
+        nombre: product.nombre,
+        descripcion: product.descripcion,
+        precio: parseFloat(product.precio),
+        stock: parseInt(product.stock, 10),
+        categoria: product.categoria,
+        imagenUrl: product.imagenUrl || "/placeholder.png",
+      }));
 
       setProducts(formattedProducts);
+    } catch (error) {
+      console.error(error);
     }
     setLoading(false);
   };
@@ -42,10 +45,8 @@ const ProductsPage = () => {
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">Gestión de Productos</h1>
 
-        {/* Formulario para agregar producto */}
         <ProductForm onProductAdded={fetchProducts} />
 
-        {/* Lista de productos */}
         {loading ? (
           <p className="text-gray-500">Cargando productos...</p>
         ) : (
