@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET!;
+console.log(SECRET);
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;

@@ -1,6 +1,6 @@
 "use client";
-import { use, useState } from "react";
-import useAuthStore from "../stores/useAuthStore";
+import useAuthStore from "app/stores/useAuthStore";
+import { useState } from "react";
 
 export default function AuthForm() {
   const [email, setEmail] = useState("");
