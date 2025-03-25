@@ -16,6 +16,7 @@ export default function AuthForm() {
     });
 
     const data = await res.json();
+    console.log(data);
     if (res.ok) login(data.user, data.token);
   };
 

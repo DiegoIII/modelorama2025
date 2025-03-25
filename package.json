@@ -39,9 +39,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
-    "postcss": "^8",
     "prisma": "^6.5.0",
-    "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
   "description": "Este proyecto es una API RESTful desarrollada con Next.js, TypeScript y TypeORM para gestionar ventas, productos, categorías y proveedores. La API permite realizar operaciones CRUD (Crear, Leer, Actualizar, Eliminar) sobre estas entidades, y está diseñada para ser utilizada en aplicaciones de gestión de inventario y ventas.",
