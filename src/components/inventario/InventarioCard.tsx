@@ -33,7 +33,7 @@ const InventarioCard: React.FC<InventarioCardProps> = ({
     // Aquí realizas la llamada de eliminación usando fetch (ajusta la URL a tu API)
     try {
       const response = await fetch(
-        `/api/inventarios/${inventario.inventario_id}`,
+        `/api/inventario/${inventario.inventario_id}`,
         {
           method: "DELETE",
         }

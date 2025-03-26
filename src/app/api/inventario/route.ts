@@ -2,23 +2,23 @@ import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Obtener todos los inventarios (GET)
+ * Obtener todos los inventario (GET)
  */
 export async function GET() {
   try {
-    console.log("Obteniendo todos los inventarios...");
+    console.log("Obteniendo todos los inventario...");
 
-    const inventarios = await prisma.inventario.findMany({
+    const inventario = await prisma.inventario.findMany({
       include: {
         producto: true, // Incluye información relacionada del producto
       },
     });
 
-    return NextResponse.json(inventarios, { status: 200 });
+    return NextResponse.json(inventario, { status: 200 });
   } catch (error) {
-    console.error("Error en GET /api/inventarios:", error);
+    console.error("Error en GET /api/inventario:", error);
     return NextResponse.json(
-      { success: false, message: "Error obteniendo los inventarios" },
+      { success: false, message: "Error obteniendo los inventario" },
       { status: 500 }
     );
   }
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error en POST /api/inventarios:", error);
+    console.error("Error en POST /api/inventario:", error);
     return NextResponse.json(
       { success: false, message: "Error creando el inventario" },
       { status: 500 }

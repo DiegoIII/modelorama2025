@@ -58,7 +58,7 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error en PATCH /api/inventarios/[id]:", error);
+    console.error("Error en PATCH /api/inventario/[id]:", error);
     return NextResponse.json(
       { success: false, message: "Error actualizando el inventario" },
       { status: 500 }

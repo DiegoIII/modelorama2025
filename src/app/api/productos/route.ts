@@ -1,103 +1,49 @@
 import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Obtener todos los productos (GET)
- */
-export async function GET() {
-  try {
-    console.log("Obteniendo todos los productos...");
-
-    const productos = await prisma.productos.findMany();
-
-    return NextResponse.json(productos, { status: 200 });
-  } catch (error) {
-    console.error("Error en GET /api/productos:", error);
-    return NextResponse.json(
-      { success: false, message: "Error obteniendo los productos" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Crear un nuevo producto (POST)
- */
 export async function POST(req: NextRequest) {
   try {
-    // Asegúrate de que el cuerpo sea recibido correctamente como JSON
+    // Verificar que el cuerpo existe
+    if (!req.body) {
+      return NextResponse.json(
+        { error: "Cuerpo de la solicitud faltante" },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
-    console.log("Cuerpo recibido:", body); // Verificar que el cuerpo es correcto
+    console.log("Datos recibidos:", body);
 
-    // Desestructurar los campos del cuerpo de la solicitud
-    const {
-      nombre,
-      descripcion,
-      precio_compra,
-      precio_venta,
-      categoria_id,
-      proveedor_id,
-      stock_minimo,
-      stock_maximo,
-    } = body;
-
-    // Validar que todos los campos obligatorios estén presentes
-    if (
-      !nombre ||
-      !precio_compra ||
-      !precio_venta ||
-      !categoria_id ||
-      !proveedor_id ||
-      !stock_minimo ||
-      !stock_maximo
-    ) {
+    // Validación básica
+    if (!body.nombre || !body.precio_compra || !body.precio_venta) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Todos los campos obligatorios deben ser proporcionados",
-        },
+        { error: "Campos obligatorios faltantes" },
         { status: 400 }
       );
     }
 
-    // Validación adicional: verificar que los campos numéricos sean positivos
-    if (
-      precio_compra <= 0 ||
-      precio_venta <= 0 ||
-      stock_minimo < 0 ||
-      stock_maximo < 0
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Los valores de precio y stock deben ser positivos",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Crear el nuevo producto en la base de datos
+    // Crear producto con valores por defecto
     const nuevoProducto = await prisma.productos.create({
       data: {
-        nombre,
-        descripcion,
-        precio_compra,
-        precio_venta,
-        categoria_id,
-        proveedor_id,
-        stock_minimo,
-        stock_maximo,
+        nombre: body.nombre,
+        descripcion: body.descripcion || "",
+        precio_compra: parseFloat(body.precio_compra),
+        precio_venta: parseFloat(body.precio_venta),
+        categoria_id: parseInt(body.categoria_id) || 1, // Valor por defecto
+        proveedor_id: parseInt(body.proveedor_id) || 1, // Valor por defecto
+        stock_minimo: parseInt(body.stock_minimo) || 0,
+        stock_maximo: parseInt(body.stock_maximo) || 100,
       },
     });
 
-    return NextResponse.json(
-      { success: true, data: nuevoProducto },
-      { status: 201 }
-    );
+    return NextResponse.json(nuevoProducto, { status: 201 });
   } catch (error) {
-    console.error("Error en POST /api/productos:", error);
+    console.error("Error detallado:", error);
     return NextResponse.json(
-      { success: false, message: "Error creando el producto" },
+      {
+        error: "Error al crear producto",
+        details: error instanceof Error ? error.message : "Error desconocido",
+      },
       { status: 500 }
     );
   }
