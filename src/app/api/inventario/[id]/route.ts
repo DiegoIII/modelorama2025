@@ -1,113 +1,116 @@
 import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Actualizar un inventario (PATCH)
- */
-export async function PATCH(
+// GET - Get specific inventory item
+export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const inventarioId = parseInt(params.id);
+    const inventoryId = Number(params.id);
 
-    if (isNaN(inventarioId)) {
-      return NextResponse.json(
-        { success: false, message: "ID inválido" },
-        { status: 400 }
-      );
-    }
-
-    const body = await req.json();
-    const { producto_id, cantidad } = body;
-
-    if (!producto_id || !cantidad) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Debe proporcionar un producto_id y cantidad para actualizar",
+    const inventoryItem = await prisma.inventario.findUnique({
+      where: { inventario_id: inventoryId },
+      include: {
+        producto: {
+          select: {
+            nombre: true,
+            descripcion: true,
+          },
         },
-        { status: 400 }
-      );
-    }
-
-    // Verificar si el inventario existe
-    const inventarioExiste = await prisma.inventario.findUnique({
-      where: { inventario_id: inventarioId },
+      },
     });
 
-    if (!inventarioExiste) {
+    if (!inventoryItem) {
       return NextResponse.json(
-        { success: false, message: "Inventario no encontrado" },
+        { error: "Inventory record not found" },
         { status: 404 }
       );
     }
 
-    // Actualizar el inventario
-    const inventarioActualizado = await prisma.inventario.update({
-      where: { inventario_id: inventarioId },
-      data: {
-        producto_id,
-        cantidad,
-      },
-    });
-
-    return NextResponse.json(
-      { success: true, data: inventarioActualizado },
-      { status: 200 }
-    );
+    return NextResponse.json(inventoryItem, { status: 200 });
   } catch (error) {
-    console.error("Error en PATCH /api/inventario/[id]:", error);
     return NextResponse.json(
-      { success: false, message: "Error actualizando el inventario" },
+      { error: "Failed to fetch inventory record" },
       { status: 500 }
     );
   }
 }
 
-/**
- * Eliminar un inventario (DELETE)
- */
+// PATCH - Update inventory item
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const inventoryId = Number(params.id);
+    const body = await req.json();
+
+    // Validate ID
+    if (isNaN(inventoryId)) {
+      return NextResponse.json(
+        { error: "Invalid inventory ID" },
+        { status: 400 }
+      );
+    }
+
+    // Check if record exists
+    const existingRecord = await prisma.inventario.findUnique({
+      where: { inventario_id: inventoryId },
+    });
+
+    if (!existingRecord) {
+      return NextResponse.json(
+        { error: "Inventory record not found" },
+        { status: 404 }
+      );
+    }
+
+    // Update record
+    const updatedRecord = await prisma.inventario.update({
+      where: { inventario_id: inventoryId },
+      data: {
+        cantidad:
+          body.cantidad !== undefined ? Number(body.cantidad) : undefined,
+        fecha_actualizacion: body.fecha_actualizacion || new Date(),
+      },
+    });
+
+    return NextResponse.json(updatedRecord, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update inventory record" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Remove inventory item
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const inventarioId = parseInt(params.id);
+    const inventoryId = Number(params.id);
 
-    if (isNaN(inventarioId)) {
+    if (isNaN(inventoryId)) {
       return NextResponse.json(
-        { success: false, message: "ID inválido" },
+        { error: "Invalid inventory ID" },
         { status: 400 }
       );
     }
 
-    // Verificar si el inventario existe antes de eliminarlo
-    const inventarioExiste = await prisma.inventario.findUnique({
-      where: { inventario_id: inventarioId },
-    });
-
-    if (!inventarioExiste) {
-      return NextResponse.json(
-        { success: false, message: "Inventario no encontrado" },
-        { status: 404 }
-      );
-    }
-
-    // Eliminar el inventario
     await prisma.inventario.delete({
-      where: { inventario_id: inventarioId },
+      where: { inventario_id: inventoryId },
     });
 
     return NextResponse.json(
-      { success: true, message: "Inventario eliminado" },
+      { message: "Inventory record deleted successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error en DELETE /api/inventarios/[id]:", error);
     return NextResponse.json(
-      { success: false, message: "Error eliminando el inventario" },
+      { error: "Failed to delete inventory record" },
       { status: 500 }
     );
   }
