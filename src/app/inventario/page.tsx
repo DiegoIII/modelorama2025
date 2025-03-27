@@ -52,13 +52,44 @@ const InventarioPage = () => {
           }))
         );
       } else {
-        console.error("Error al obtener los inventario");
+        console.error("Error al obtener los inventarios");
       }
     } catch (error) {
       console.error("Error de red o de fetch:", error);
     }
     setLoading(false);
   };
+
+  const handleInventarioAdded = () => {
+    fetchInventario(); // Refresh the inventory list after adding a new item
+  };
+
+  return (
+    <Layout>
+      <div>
+        {loading ? (
+          <p>Cargando inventario...</p>
+        ) : (
+          <div>
+            <InventarioForm onInventarioAdded={handleInventarioAdded} />
+            {inventario.map((item) => (
+              <InventarioCard
+                key={item.inventario_id}
+                inventario={item}
+                onDelete={() => {
+                  setInventario((prev) =>
+                    prev.filter(
+                      (inv) => inv.inventario_id !== item.inventario_id
+                    )
+                  );
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
 };
 
 export default InventarioPage;
