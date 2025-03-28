@@ -1,34 +1,26 @@
-import { useState } from "react";
+"use client";
+import { useState, useEffect } from "react";
+
+interface Product {
+  id?: string;
+  nombre: string;
+  descripcion: string;
+  precio_compra: number;
+  precio_venta: number;
+  stock_minimo: number;
+  stock_maximo: number;
+  categoria: string;
+  proveedor: string;
+  imagenUrl: string;
+}
 
 interface ProductFormProps {
   onProductAdded: () => void;
+  productToEdit?: Product;
 }
 
-const createProduct = async (productData: any) => {
-  try {
-    const response = await fetch("/api/products", {
-      // Cambia la URL si es necesario.
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(productData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Error al agregar el producto");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error al agregar el producto:", error);
-    throw error;
-  }
-};
-
-const ProductForm: React.FC<ProductFormProps> = ({ onProductAdded }) => {
-  const [formData, setFormData] = useState({
+const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
+  const initialForm = {
     nombre: "",
     descripcion: "",
     precio_compra: "",
@@ -38,139 +30,112 @@ const ProductForm: React.FC<ProductFormProps> = ({ onProductAdded }) => {
     categoria: "",
     proveedor: "",
     imagenUrl: "",
-  });
+  };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const [formData, setFormData] = useState(initialForm);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [proveedores, setProveedores] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (productToEdit) {
+      const { id, ...rest } = productToEdit;
+      setFormData(
+        Object.entries(rest).reduce(
+          (acc, [key, val]) => ({
+            ...acc,
+            [key]: typeof val === "number" ? val.toString() : val || "",
+          }),
+          initialForm
+        )
+      );
+    }
+  }, [productToEdit]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      await createProduct(formData); // Llamar a la función local para crear el producto
+      const numericFields = {
+        precio_compra: parseFloat(formData.precio_compra),
+        precio_venta: parseFloat(formData.precio_venta),
+        stock_minimo: parseInt(formData.stock_minimo),
+        stock_maximo: parseInt(formData.stock_maximo),
+      };
+
+      const response = await fetch(
+        productToEdit ? `/api/productos/${productToEdit.id}` : "/api/productos",
+        {
+          method: productToEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            ...numericFields,
+            imagenUrl: formData.imagenUrl || "/placeholder.png",
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Error al guardar");
       onProductAdded();
-      setFormData({
-        nombre: "",
-        descripcion: "",
-        precio_compra: "",
-        precio_venta: "",
-        stock_minimo: "",
-        stock_maximo: "",
-        categoria: "",
-        proveedor: "",
-        imagenUrl: "",
-      });
-    } catch (error) {
-      console.error("Error al agregar producto:", error);
+      if (!productToEdit) setFormData(initialForm);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6"
-    >
-      <h2 className="text-lg font-bold mb-4">Agregar Producto</h2>
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-xl font-semibold mb-6">
+        {productToEdit ? "Editar Producto" : "Agregar Producto"}
+      </h2>
 
-      <label className="block mb-2">Nombre</label>
-      <input
-        name="nombre"
-        placeholder="Nombre"
-        onChange={handleChange}
-        value={formData.nombre}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
+      {error && <div className="mb-4 p-3 bg-red-100 text-red-700">{error}</div>}
 
-      <label className="block mb-2">Descripción</label>
-      <textarea
-        name="descripcion"
-        placeholder="Descripción"
-        onChange={handleChange}
-        value={formData.descripcion}
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">Precio Compra</label>
-      <input
-        name="precio_compra"
-        type="number"
-        placeholder="Precio de compra"
-        onChange={handleChange}
-        value={formData.precio_compra}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">Precio Venta</label>
-      <input
-        name="precio_venta"
-        type="number"
-        placeholder="Precio de venta"
-        onChange={handleChange}
-        value={formData.precio_venta}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">Stock Mínimo</label>
-      <input
-        name="stock_minimo"
-        type="number"
-        placeholder="Stock mínimo"
-        onChange={handleChange}
-        value={formData.stock_minimo}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">Stock Máximo</label>
-      <input
-        name="stock_maximo"
-        type="number"
-        placeholder="Stock máximo"
-        onChange={handleChange}
-        value={formData.stock_maximo}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">Categoría</label>
-      <input
-        name="categoria"
-        placeholder="Categoría"
-        onChange={handleChange}
-        value={formData.categoria}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">Proveedor</label>
-      <input
-        name="proveedor"
-        placeholder="Proveedor"
-        onChange={handleChange}
-        value={formData.proveedor}
-        required
-        className="w-full mb-2 p-2 border rounded"
-      />
-
-      <label className="block mb-2">URL de Imagen</label>
-      <input
-        name="imagenUrl"
-        placeholder="URL Imagen"
-        onChange={handleChange}
-        value={formData.imagenUrl}
-        className="w-full mb-2 p-2 border rounded"
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Object.entries(formData).map(([key, value]) => (
+          <div key={key} className="mb-4">
+            <label className="block text-sm font-medium mb-1">
+              {key.replace("_", " ")}
+              {key !== "descripcion" && key !== "imagenUrl" && (
+                <span className="text-red-500">*</span>
+              )}
+            </label>
+            <input
+              name={key}
+              type={
+                key.includes("precio") || key.includes("stock")
+                  ? "number"
+                  : "text"
+              }
+              value={value}
+              onChange={handleChange}
+              required={key !== "descripcion" && key !== "imagenUrl"}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
+        ))}
+      </div>
 
       <button
         type="submit"
-        className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+        disabled={isSubmitting}
+        className={`w-full py-2 px-4 rounded-md text-white ${
+          productToEdit ? "bg-yellow-600" : "bg-blue-600"
+        } ${isSubmitting ? "opacity-50" : ""}`}
       >
-        Agregar Producto
+        {isSubmitting
+          ? "Procesando..."
+          : productToEdit
+          ? "Actualizar"
+          : "Agregar"}
       </button>
     </form>
   );
