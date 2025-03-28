@@ -10,7 +10,7 @@ export async function GET() {
 
     const inventarios = await prisma.inventario.findMany({
       include: {
-        producto: true, // Incluye información relacionada del producto
+        producto: true, // Incluye información del producto relacionado
       },
     });
 
@@ -29,7 +29,23 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // Verificar si el request tiene contenido
+    if (!req.body) {
+      return NextResponse.json(
+        { success: false, message: "El cuerpo de la solicitud está vacío" },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json().catch(() => null);
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { success: false, message: "El formato de la solicitud no es válido" },
+        { status: 400 }
+      );
+    }
+
     const { producto_id, cantidad } = body;
 
     if (!producto_id || !cantidad) {
@@ -55,6 +71,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("Error en POST /api/inventarios:", error);
+
     return NextResponse.json(
       { success: false, message: "Error creando el inventario" },
       { status: 500 }
