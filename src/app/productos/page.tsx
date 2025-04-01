@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
 import ProductForm from "app/components/productos/ProductForm";
+import Image from "next/image";
 
 interface Product {
   id: string;
@@ -19,12 +20,28 @@ interface Product {
   estado?: string;
 }
 
+interface ApiProduct {
+  producto_id: number;
+  nombre: string;
+  descripcion: string;
+  precio_compra: number;
+  precio_venta: number;
+  stock_minimo: number;
+  stock_maximo: number;
+  categoria: string;
+  imagenUrl: string;
+  proveedor: string;
+  estado?: string;
+}
+
 const API_URL = "/api/productos";
-//     ];
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [productToEdit, setProductToEdit] = useState<Product | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     fetchProducts();
@@ -35,16 +52,16 @@ const ProductsPage = () => {
       setLoading(true);
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error("Error al obtener productos");
-      const data = await res.json();
+      const data = (await res.json()) as ApiProduct[];
       setProducts(
-        data.map((p: any) => ({
+        data.map((p) => ({
           id: p.producto_id.toString(),
           producto_id: Number(p.producto_id) || 0,
           nombre: p.nombre,
           descripcion: p.descripcion,
           precio_compra: Number(p.precio_compra) || 0,
           precio_venta: Number(p.precio_venta) || 0,
-          stock: Number(p.stock) || 0,
+          stock: 0, // Puedes calcular o agregar stock si lo manejas en otra tabla (por ej. inventario)
           stock_minimo: Number(p.stock_minimo) || 0,
           stock_maximo: Number(p.stock_maximo) || 100,
           categoria: p.categoria || "Sin categoría",
@@ -70,6 +87,10 @@ const ProductsPage = () => {
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setProductToEdit(product);
+  };
+
   const headers = [
     "ID",
     "Imagen",
@@ -87,7 +108,10 @@ const ProductsPage = () => {
     <Layout>
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">Gestión de Productos</h1>
-        <ProductForm onProductAdded={fetchProducts} />
+        <ProductForm
+          onProductAdded={fetchProducts}
+          productToEdit={productToEdit}
+        />
         {loading ? (
           <p className="text-gray-500">Cargando productos...</p>
         ) : (
@@ -109,10 +133,12 @@ const ProductsPage = () => {
                 <tr key={product.id} className="divide-y">
                   <td>{product.producto_id}</td>
                   <td>
-                    <img
+                    <Image
                       src={product.imagenUrl}
                       alt={product.nombre}
-                      className="h-10 w-10 rounded-full"
+                      width={40}
+                      height={40}
+                      className="rounded-full"
                     />
                   </td>
                   <td>{product.nombre}</td>
@@ -124,7 +150,13 @@ const ProductsPage = () => {
                   </td>
                   <td>{product.categoria}</td>
                   <td>{product.proveedor}</td>
-                  <td>
+                  <td className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(product)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Editar
+                    </button>
                     <button
                       onClick={() => handleDelete(product.id)}
                       className="text-red-600 hover:text-red-900"
