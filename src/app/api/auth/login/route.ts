@@ -9,43 +9,72 @@ export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email y contraseña son requeridos" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: true,
+        created_at: true,
+      },
+    });
+
     if (!user) {
       return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
+        { error: "Credenciales inválidas" },
+        { status: 401 }
       );
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return NextResponse.json(
-        { error: "Contraseña incorrecta" },
+        { error: "Credenciales inválidas" },
         { status: 401 }
       );
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+      },
+      SECRET,
+      { expiresIn: "1h" }
+    );
 
-    // Creamos la respuesta y seteamos la cookie
+    const { password: _, ...userWithoutPassword } = user;
+
     const response = NextResponse.json(
-      { message: "Login exitoso", token, user },
+      {
+        message: "Login exitoso",
+        token,
+        user: userWithoutPassword,
+      },
       { status: 200 }
     );
 
-    response.cookies.set("token", token, {
+    response.cookies.set({
+      name: "token",
+      value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 3600, // 1 hora
       path: "/",
-      sameSite: "lax",
+      sameSite: "strict",
     });
 
     return response;
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500 }

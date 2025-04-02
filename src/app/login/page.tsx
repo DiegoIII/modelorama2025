@@ -1,36 +1,47 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LockClosedIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { useAuthStore } from "app/stores/useAuthStore";
 
-const AuthForm = () => {
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/");
+    }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+      });
 
-      if (!email || !password) {
-        throw new Error("Por favor complete todos los campos");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Error al iniciar sesión");
       }
 
-      if (!email.includes("@")) {
-        throw new Error("Ingrese un email válido");
-      }
-
+      login(data.user, data.token);
       toast.success("Inicio de sesión exitoso!");
-      router.push("/dashboard");
+      router.push("/");
     } catch (error: any) {
-      toast.error(error.message || "Error al iniciar sesión");
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -197,10 +208,6 @@ const AuthForm = () => {
       </div>
     </div>
   );
-};
-
-const LoginPage = () => {
-  return <AuthForm />;
 };
 
 export default LoginPage;

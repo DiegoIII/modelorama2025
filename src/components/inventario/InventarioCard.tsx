@@ -19,18 +19,18 @@ interface Inventario {
 interface InventarioCardProps {
   inventario: Inventario;
   onDelete: () => void;
+  onUpdate?: () => Promise<void>; // Prop opcional añadida
 }
 
 const InventarioCard: React.FC<InventarioCardProps> = ({
   inventario,
   onDelete,
+  onUpdate,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
-
-    // Aquí realizas la llamada de eliminación usando fetch (ajusta la URL a tu API)
     try {
       const response = await fetch(
         `/api/inventario/${inventario.inventario_id}`,
@@ -43,11 +43,12 @@ const InventarioCard: React.FC<InventarioCardProps> = ({
         throw new Error("Error al eliminar el inventario");
       }
 
-      onDelete(); // Llamamos la función onDelete al eliminar correctamente
+      onDelete();
+      if (onUpdate) await onUpdate(); // Llama a onUpdate si existe
     } catch (error) {
       console.error("Error al eliminar el inventario:", error);
     } finally {
-      setIsDeleting(false); // Termina el proceso de eliminación
+      setIsDeleting(false);
     }
   };
 

@@ -1,59 +1,60 @@
 "use client";
+import { useState, useEffect } from "react";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-
-interface Producto {
+interface Product {
   producto_id: number;
   nombre: string;
+  descripcion: string;
+  precio_compra: number;
+  precio_venta: number;
+  categoria: string;
+  proveedor: string;
 }
 
-const InventarioForm = ({ productos = [] }: { productos?: Producto[] }) => {
-  const [producto, setProducto] = useState("");
-  const [cantidad, setCantidad] = useState(0);
+interface InventarioFormProps {
+  onInventarioAdded: () => void;
+}
+
+const InventarioForm = ({ onInventarioAdded }: InventarioFormProps) => {
+  const [productos, setProductos] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [productoId, setProductoId] = useState("");
+  const [cantidad, setCantidad] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [productosList, setProductosList] = useState<Producto[]>([]);
-  const [initialLoad, setInitialLoad] = useState(true);
-  const router = useRouter();
 
-  // Usamos useMemo para evitar recrear el array de productos en cada render
-  const memoizedProductos = useMemo(() => productos, [productos]);
-
-  // Efecto para cargar productos solo en el montaje inicial
   useEffect(() => {
-    if (initialLoad) {
-      if (memoizedProductos && Array.isArray(memoizedProductos)) {
-        setProductosList(memoizedProductos);
-      } else {
-        const fetchProductos = async () => {
-          try {
-            const response = await fetch("/api/productos");
-            const data = await response.json();
-            if (data.success && Array.isArray(data.data)) {
-              setProductosList(data.data);
-            } else {
-              throw new Error("Formato de datos inválido");
-            }
-          } catch (err) {
-            console.error("Error cargando productos:", err);
-            setError("No se pudieron cargar los productos");
-          }
-        };
-        fetchProductos();
+    const fetchProductos = async () => {
+      try {
+        const response = await fetch("/api/productos");
+        if (!response.ok) {
+          throw new Error("Error al obtener productos");
+        }
+        const data = await response.json();
+
+        // Asegúrate de que la respuesta sea un array
+        if (Array.isArray(data)) {
+          setProductos(data);
+        } else {
+          console.error("Formato de datos inesperado:", data);
+          setError("Formato de datos inesperado");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+      } finally {
+        setLoading(false);
       }
-      setInitialLoad(false);
-    }
-  }, [memoizedProductos, initialLoad]);
+    };
+
+    fetchProductos();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    if (!producto || cantidad <= 0) {
-      setError("Producto y cantidad son requeridos (cantidad > 0)");
-      setLoading(false);
+    if (!productoId || !cantidad) {
+      setError("Todos los campos son obligatorios");
       return;
     }
 
@@ -64,83 +65,94 @@ const InventarioForm = ({ productos = [] }: { productos?: Producto[] }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          producto_id: Number(producto),
-          cantidad: Number(cantidad),
+          producto_id: parseInt(productoId),
+          cantidad: parseInt(cantidad),
         }),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.message || "Error al agregar inventario");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al agregar al inventario");
       }
 
-      setProducto("");
-      setCantidad(0);
-      router.refresh();
-    } catch (err) {
-      console.error("Error al agregar inventario:", err);
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
+      onInventarioAdded();
+      setProductoId("");
+      setCantidad("");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Error desconocido");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-white p-6 rounded-lg shadow-md mb-8 border-l-4 border-[#F2B705]">
+      <h2 className="text-xl font-semibold mb-4 text-[#032059]">
+        Agregar al Inventario
+      </h2>
+
       {error && (
-        <div className="p-2 bg-red-100 text-red-700 rounded-md">{error}</div>
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+          {error}
+        </div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Producto
-        </label>
-        <select
-          value={producto}
-          onChange={(e) => setProducto(e.target.value)}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
-          disabled={loading || productosList.length === 0}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Producto
+          </label>
+          {loading ? (
+            <div className="flex items-center text-gray-500">
+              <span className="mr-2">Cargando productos...</span>
+              <div className="animate-spin">🔄</div>
+            </div>
+          ) : productos.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No hay productos disponibles. Crea primero un producto.
+            </p>
+          ) : (
+            <select
+              value={productoId}
+              onChange={(e) => setProductoId(e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#032059] focus:border-[#032059]"
+              required
+            >
+              <option value="">Seleccione un producto</option>
+              {productos.map((producto) => (
+                <option key={producto.producto_id} value={producto.producto_id}>
+                  {producto.nombre} - {producto.categoria} ($
+                  {producto.precio_venta})
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Cantidad
+          </label>
+          <input
+            type="number"
+            value={cantidad}
+            onChange={(e) => setCantidad(e.target.value)}
+            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#032059] focus:border-[#032059]"
+            required
+            min="1"
+            placeholder="Ingrese la cantidad"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className={`w-full py-2 px-4 rounded-md text-white ${
+            loading ? "bg-gray-400" : "bg-[#032059] hover:bg-[#031D40]"
+          } transition-colors`}
+          disabled={loading || productos.length === 0}
         >
-          <option value="">
-            {productosList.length === 0
-              ? "Cargando productos..."
-              : "Seleccione un producto"}
-          </option>
-          {productosList.map((prod) => (
-            <option key={prod.producto_id} value={prod.producto_id}>
-              {prod.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Cantidad
-        </label>
-        <input
-          type="number"
-          min="1"
-          value={cantidad || ""}
-          onChange={(e) => setCantidad(Number(e.target.value))}
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
-          disabled={loading}
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={
-          loading || !producto || cantidad <= 0 || productosList.length === 0
-        }
-        className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-          loading ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      >
-        {loading ? "Procesando..." : "Agregar al Inventario"}
-      </button>
-    </form>
+          {loading ? "Procesando..." : "Agregar al Inventario"}
+        </button>
+      </form>
+    </div>
   );
 };
 

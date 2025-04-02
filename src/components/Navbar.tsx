@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -22,7 +22,7 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import useAuthStore from "../stores/useAuthStore";
+import { useAuthStore } from "app/stores/useAuthStore";
 
 interface NavLinkProps {
   href: string;
@@ -51,8 +51,13 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon, text, onClick }) => {
 };
 
 const Navbar: React.FC = () => {
-  const { token, user, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const navLinks = [
     { href: "/", icon: faHome, text: "Inicio" },
@@ -70,6 +75,28 @@ const Navbar: React.FC = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      closeMenu();
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
+  if (!isMounted) {
+    return (
+      <nav className="bg-[#031D40] p-4 shadow-lg sticky top-0 z-50">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="text-[#F2B705] text-xl font-bold flex items-center">
+            <FontAwesomeIcon icon={faBeer} className="mr-2 text-2xl" />
+            <span className="text-2xl">Modelorama</span>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bg-[#031D40] p-4 shadow-lg sticky top-0 z-50">
@@ -97,8 +124,7 @@ const Navbar: React.FC = () => {
             isMenuOpen ? "flex" : "hidden"
           } md:flex flex-col md:flex-row items-center w-full md:w-auto mt-4 md:mt-0`}
         >
-          {/* Si hay token, mostrar los menús */}
-          {token ? (
+          {isAuthenticated ? (
             <>
               <ul className="flex flex-col md:flex-row flex-wrap justify-center gap-2 md:gap-4 w-full md:w-auto">
                 {navLinks.map((link) => (
@@ -115,10 +141,7 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
                 <button
-                  onClick={() => {
-                    logout();
-                    closeMenu();
-                  }}
+                  onClick={handleLogout}
                   className="flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors shadow-md"
                 >
                   <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
@@ -127,7 +150,6 @@ const Navbar: React.FC = () => {
               </div>
             </>
           ) : (
-            // Si no hay token, mostrar el botón de inicio de sesión
             <Link
               href="/login"
               onClick={closeMenu}

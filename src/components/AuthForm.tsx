@@ -1,7 +1,7 @@
 "use client";
-import useAuthStore from "app/stores/useAuthStore";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "app/stores/useAuthStore";
 
 export default function AuthForm() {
   const [email, setEmail] = useState("");
@@ -21,7 +21,7 @@ export default function AuthForm() {
     console.log(data);
     if (res.ok) {
       login(data.user, data.token);
-      router.push("/dashboard");
+      router.push("/");
     }
   };
 

@@ -2,6 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faReceipt,
+  faSpinner,
+  faPlus,
+  faBox,
+  faShoppingCart,
+  faHashtag,
+  faDollarSign,
+  faCalculator,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface DetalleCompra {
   detalle_compra_id: number;
@@ -49,12 +60,7 @@ const DetalleComprasPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:3000/api/detalle-compras");
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-
+      const response = await fetch("/api/detalle-compras");
       const result: ApiResponse = await response.json();
 
       if (result.success && Array.isArray(result.data)) {
@@ -73,7 +79,7 @@ const DetalleComprasPage: React.FC = () => {
 
   const fetchCompras = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/compras");
+      const response = await fetch("/api/compras");
       const data = await response.json();
       if (data.success) {
         setCompras(data.data);
@@ -85,7 +91,7 @@ const DetalleComprasPage: React.FC = () => {
 
   const fetchProductos = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/productos");
+      const response = await fetch("/api/productos");
       const data = await response.json();
       if (data.success) {
         setProductos(data.data);
@@ -109,16 +115,11 @@ const DetalleComprasPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/detalle-compras",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(nuevoDetalle),
-        }
-      );
+      const response = await fetch("/api/detalle-compras", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoDetalle),
+      });
 
       const result = await response.json();
 
@@ -152,13 +153,14 @@ const DetalleComprasPage: React.FC = () => {
     const { name, value } = e.target;
     setNuevoDetalle((prev) => ({
       ...prev,
-      [name]:
-        name === "compra_id" ||
-        name === "producto_id" ||
-        name === "cantidad" ||
-        name === "precio_unitario"
-          ? Number(value)
-          : value,
+      [name]: [
+        "compra_id",
+        "producto_id",
+        "cantidad",
+        "precio_unitario",
+      ].includes(name)
+        ? Number(value)
+        : value,
     }));
   };
 
@@ -171,19 +173,33 @@ const DetalleComprasPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Gestión de Detalles de Compra
-        </h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-8">
+          <FontAwesomeIcon
+            icon={faReceipt}
+            className="text-3xl mr-3 text-[#F2B705]"
+          />
+          <h1 className="text-3xl font-bold text-[#031D40]">
+            Detalle de Compras
+          </h1>
+        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          {/* Formulario para agregar un detalle */}
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Formulario de nuevo detalle */}
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
+          <h2 className="text-xl font-semibold text-[#032059] mb-4 flex items-center">
+            <FontAwesomeIcon icon={faPlus} className="mr-2 text-[#F2B705]" />
+            Nuevo Detalle de Compra
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-gray-700 mb-1">Compra</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faShoppingCart} className="mr-2" />
+                Compra
+              </label>
               <select
                 name="compra_id"
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 value={nuevoDetalle.compra_id || ""}
                 onChange={handleInputChange}
               >
@@ -196,11 +212,15 @@ const DetalleComprasPage: React.FC = () => {
                 ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-gray-700 mb-1">Producto</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faBox} className="mr-2" />
+                Producto
+              </label>
               <select
                 name="producto_id"
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 value={nuevoDetalle.producto_id || ""}
                 onChange={handleInputChange}
               >
@@ -215,90 +235,135 @@ const DetalleComprasPage: React.FC = () => {
                 ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-gray-700 mb-1">Cantidad</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faHashtag} className="mr-2" />
+                Cantidad
+              </label>
               <input
                 type="number"
                 name="cantidad"
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 placeholder="Cantidad"
                 min="1"
                 value={nuevoDetalle.cantidad || ""}
                 onChange={handleInputChange}
               />
             </div>
+
             <div>
-              <label className="block text-gray-700 mb-1">
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faDollarSign} className="mr-2" />
                 Precio Unitario
               </label>
               <input
                 type="number"
                 name="precio_unitario"
-                className="w-full p-2 border border-gray-300 rounded-lg"
-                placeholder="Precio"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
+                placeholder="0.00"
                 step="0.01"
                 min="0.01"
                 value={nuevoDetalle.precio_unitario || ""}
                 onChange={handleInputChange}
               />
             </div>
-            <button
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 col-span-4"
-              onClick={handleCreateDetalle}
-              disabled={loading}
-            >
-              {loading ? "Procesando..." : "Agregar Detalle"}
-            </button>
           </div>
 
+          <button
+            onClick={handleCreateDetalle}
+            disabled={loading}
+            className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors w-full md:w-auto"
+          >
+            {loading ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                Procesando...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                Agregar Detalle
+              </>
+            )}
+          </button>
+
           {error && (
-            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
               {error}
             </div>
           )}
+        </div>
 
-          {/* Lista de detalles */}
-          <div className="mt-6 overflow-x-auto">
-            {loading ? (
-              <div className="text-center py-4">
-                <p>Cargando detalles...</p>
-              </div>
-            ) : (
-              <table className="min-w-full bg-white border">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="py-2 px-4 border">ID</th>
-                    <th className="py-2 px-4 border">Compra</th>
-                    <th className="py-2 px-4 border">Producto</th>
-                    <th className="py-2 px-4 border">Cantidad</th>
-                    <th className="py-2 px-4 border">Precio Unitario</th>
-                    <th className="py-2 px-4 border">Subtotal</th>
+        {/* Listado de detalles */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 bg-[#031D40] text-white flex items-center">
+            <FontAwesomeIcon icon={faCalculator} className="mr-2" />
+            <h2 className="text-xl font-semibold">Historial de Detalles</h2>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <FontAwesomeIcon
+                icon={faSpinner}
+                spin
+                className="text-4xl text-[#032059] mb-4"
+              />
+              <p className="text-lg text-[#031D40]">Cargando detalles...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faHashtag} className="mr-1" /> ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faShoppingCart} className="mr-1" />{" "}
+                      Compra
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faBox} className="mr-1" /> Producto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faHashtag} className="mr-1" />{" "}
+                      Cantidad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faDollarSign} className="mr-1" />{" "}
+                      Precio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faCalculator} className="mr-1" />{" "}
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white divide-y divide-gray-200">
                   {detalles.length > 0 ? (
                     detalles.map((detalle) => (
                       <tr
                         key={detalle.detalle_compra_id}
-                        className="hover:bg-gray-50"
+                        className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {detalle.detalle_compra_id}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           Compra #{detalle.compra_id}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {detalle.producto?.nombre_producto ||
                             `Producto #${detalle.producto_id}`}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {detalle.cantidad}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {formatCurrency(detalle.precio_unitario)}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#032059]">
                           {formatCurrency(detalle.subtotal)}
                         </td>
                       </tr>
@@ -307,7 +372,7 @@ const DetalleComprasPage: React.FC = () => {
                     <tr>
                       <td
                         colSpan={6}
-                        className="py-4 text-center text-gray-500"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         No hay detalles de compra registrados
                       </td>
@@ -315,8 +380,8 @@ const DetalleComprasPage: React.FC = () => {
                   )}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

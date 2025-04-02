@@ -2,6 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faShoppingCart,
+  faSpinner,
+  faPlus,
+  faBoxOpen,
+  faCalendarAlt,
+  faDollarSign,
+  faIdCard,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface Proveedor {
   proveedor_id: number;
@@ -49,16 +59,10 @@ const ComprasPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:3000/api/compras");
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-
+      const response = await fetch("/api/compras");
       const result: ApiResponse = await response.json();
 
       if (result.success && Array.isArray(result.data)) {
-        // Aseguramos que total_compra sea número
         const comprasFormateadas = result.data.map((compra) => ({
           ...compra,
           total_compra:
@@ -86,11 +90,9 @@ const ComprasPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/compras", {
+      const response = await fetch("/api/compras", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           proveedor_id: nuevaCompra.proveedor_id,
           fecha_compra: nuevaCompra.fecha_compra,
@@ -101,11 +103,7 @@ const ComprasPage: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setNuevaCompra({
-          proveedor_id: 0,
-          fecha_compra: "",
-          total_compra: 0,
-        });
+        setNuevaCompra({ proveedor_id: 0, fecha_compra: "", total_compra: 0 });
         setError(null);
         fetchCompras();
       } else {
@@ -138,98 +136,154 @@ const ComprasPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Gestión de Compras
-        </h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-8">
+          <FontAwesomeIcon
+            icon={faShoppingCart}
+            className="text-3xl mr-3 text-[#F2B705]"
+          />
+          <h1 className="text-3xl font-bold text-[#031D40]">
+            Gestión de Compras
+          </h1>
+        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          {/* Formulario para agregar una compra */}
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Formulario de nueva compra */}
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
+          <h2 className="text-xl font-semibold text-[#032059] mb-4 flex items-center">
+            <FontAwesomeIcon icon={faPlus} className="mr-2 text-[#F2B705]" />
+            Registrar Nueva Compra
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-gray-700 mb-1">ID Proveedor</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faIdCard} className="mr-2" />
+                ID Proveedor
+              </label>
               <input
                 type="number"
                 name="proveedor_id"
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 placeholder="ID del proveedor"
                 value={nuevaCompra.proveedor_id || ""}
                 onChange={handleInputChange}
                 min="1"
               />
             </div>
+
             <div>
-              <label className="block text-gray-700 mb-1">Fecha Compra</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
+                Fecha Compra
+              </label>
               <input
                 type="date"
                 name="fecha_compra"
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 value={nuevaCompra.fecha_compra}
                 onChange={handleInputChange}
                 required
               />
             </div>
+
             <div>
-              <label className="block text-gray-700 mb-1">Total Compra</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faDollarSign} className="mr-2" />
+                Total Compra
+              </label>
               <input
                 type="number"
                 name="total_compra"
-                className="w-full p-2 border border-gray-300 rounded-lg"
-                placeholder="Total"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
+                placeholder="0.00"
                 step="0.01"
                 min="0"
                 value={nuevaCompra.total_compra || ""}
                 onChange={handleInputChange}
               />
             </div>
-            <button
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 col-span-3"
-              onClick={handleCreateCompra}
-              disabled={loading}
-            >
-              {loading ? "Procesando..." : "Registrar Compra"}
-            </button>
           </div>
 
+          <button
+            onClick={handleCreateCompra}
+            disabled={loading}
+            className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors w-full md:w-auto"
+          >
+            {loading ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                Procesando...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faShoppingCart} className="mr-2" />
+                Registrar Compra
+              </>
+            )}
+          </button>
+
           {error && (
-            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
               {error}
             </div>
           )}
+        </div>
 
-          {/* Lista de compras */}
-          <div className="mt-6 overflow-x-auto">
-            {loading ? (
-              <div className="text-center py-4">
-                <p>Cargando compras...</p>
-              </div>
-            ) : (
-              <table className="min-w-full bg-white border">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="py-2 px-4 border">ID</th>
-                    <th className="py-2 px-4 border">Proveedor</th>
-                    <th className="py-2 px-4 border">Fecha</th>
-                    <th className="py-2 px-4 border">Total</th>
+        {/* Listado de compras */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 bg-[#031D40] text-white flex items-center">
+            <FontAwesomeIcon icon={faBoxOpen} className="mr-2" />
+            <h2 className="text-xl font-semibold">Historial de Compras</h2>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <FontAwesomeIcon
+                icon={faSpinner}
+                spin
+                className="text-4xl text-[#032059] mb-4"
+              />
+              <p className="text-lg text-[#031D40]">Cargando compras...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      Proveedor
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      Total
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white divide-y divide-gray-200">
                   {compras.length > 0 ? (
                     compras.map((compra) => (
-                      <tr key={compra.compra_id} className="hover:bg-gray-50">
-                        <td className="py-2 px-4 border text-center">
+                      <tr
+                        key={compra.compra_id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {compra.compra_id}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {compra.proveedor?.nombre_proveedor ||
                             `Proveedor #${compra.proveedor_id}`}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {new Date(compra.fecha_compra).toLocaleDateString(
                             "es-ES"
                           )}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#032059]">
                           {formatCurrency(compra.total_compra)}
                         </td>
                       </tr>
@@ -238,7 +292,7 @@ const ComprasPage: React.FC = () => {
                     <tr>
                       <td
                         colSpan={4}
-                        className="py-4 text-center text-gray-500"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         No hay compras registradas
                       </td>
@@ -246,8 +300,8 @@ const ComprasPage: React.FC = () => {
                   )}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

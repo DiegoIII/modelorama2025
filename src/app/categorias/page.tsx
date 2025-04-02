@@ -2,6 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faTags,
+  faSpinner,
+  faPlus,
+  faEdit,
+  faTrash,
+  faSave,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface Categoria {
   categoria_id: number;
@@ -29,12 +39,7 @@ const CategoriasPage: React.FC = () => {
   const fetchCategorias = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/api/categorias");
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-
+      const response = await fetch("/api/categorias");
       const data = await response.json();
       setCategorias(data);
       setError(null);
@@ -53,11 +58,9 @@ const CategoriasPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/categorias", {
+      const response = await fetch("/api/categorias", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre_categoria: nuevaCategoria }),
       });
 
@@ -93,16 +96,11 @@ const CategoriasPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/categorias/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ nombre_categoria: editValue }),
-        }
-      );
+      const response = await fetch(`/api/categorias/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre_categoria: editValue }),
+      });
 
       const result: ApiResponse = await response.json();
 
@@ -121,17 +119,13 @@ const CategoriasPage: React.FC = () => {
   };
 
   const handleDeleteCategoria = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar esta categoría?")) {
+    if (!confirm("¿Estás seguro de que deseas eliminar esta categoría?"))
       return;
-    }
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/categorias/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/categorias/${id}`, {
+        method: "DELETE",
+      });
 
       const result: ApiResponse = await response.json();
 
@@ -148,97 +142,123 @@ const CategoriasPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Gestión de Categorías
-        </h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-8">
+          <FontAwesomeIcon
+            icon={faTags}
+            className="text-3xl mr-3 text-[#F2B705]"
+          />
+          <h1 className="text-3xl font-bold text-[#031D40]">
+            Gestión de Categorías
+          </h1>
+        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          {/* Formulario para agregar una categoría */}
-          <div className="mb-4">
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              placeholder="Nueva categoría"
+              className="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#032059]"
+              placeholder="Nombre de la nueva categoría"
               value={nuevaCategoria}
               onChange={(e) => setNuevaCategoria(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleCreateCategoria()}
             />
             <button
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               onClick={handleCreateCategoria}
+              className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors"
             >
-              Agregar Categoría
+              <FontAwesomeIcon icon={faPlus} className="mr-2" />
+              Agregar
             </button>
           </div>
 
           {error && (
-            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+            <div className="p-3 bg-red-100 text-red-700 rounded-lg mb-4">
               {error}
             </div>
           )}
+        </div>
 
-          {loading ? (
-            <p>Cargando categorías...</p>
-          ) : (
-            <ul className="mt-4 space-y-2">
-              {categorias.length > 0 ? (
-                categorias.map((categoria) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <FontAwesomeIcon
+              icon={faSpinner}
+              spin
+              className="text-4xl text-[#032059] mb-4"
+            />
+            <p className="text-lg text-[#031D40]">Cargando categorías...</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {categorias.length > 0 ? (
+              <ul className="divide-y divide-gray-200">
+                {categorias.map((categoria) => (
                   <li
                     key={categoria.categoria_id}
-                    className="p-2 border-b flex justify-between items-center"
+                    className="p-4 hover:bg-gray-50 transition-colors"
                   >
                     {editingId === categoria.categoria_id ? (
-                      <div className="flex-grow flex items-center">
+                      <div className="flex flex-col md:flex-row gap-4">
                         <input
                           type="text"
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="flex-grow p-2 border border-gray-300 rounded-lg mr-2"
+                          className="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#032059]"
                         />
-                        <button
-                          onClick={() =>
-                            handleUpdateCategoria(categoria.categoria_id)
-                          }
-                          className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 mr-2"
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          onClick={cancelEditing}
-                          className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600"
-                        >
-                          Cancelar
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              handleUpdateCategoria(categoria.categoria_id)
+                            }
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+                          >
+                            <FontAwesomeIcon icon={faSave} className="mr-2" />
+                            Guardar
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+                          >
+                            <FontAwesomeIcon icon={faTimes} className="mr-2" />
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <>
-                        <span>{categoria.nombre_categoria}</span>
-                        <div className="space-x-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg text-[#031D40]">
+                          {categoria.nombre_categoria}
+                        </span>
+                        <div className="flex gap-2">
                           <button
                             onClick={() => startEditing(categoria)}
-                            className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600"
+                            className="bg-[#F2B705] hover:bg-[#e0a904] text-[#031D40] px-4 py-2 rounded-lg flex items-center transition-colors"
                           >
+                            <FontAwesomeIcon icon={faEdit} className="mr-2" />
                             Editar
                           </button>
                           <button
                             onClick={() =>
                               handleDeleteCategoria(categoria.categoria_id)
                             }
-                            className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
                           >
+                            <FontAwesomeIcon icon={faTrash} className="mr-2" />
                             Eliminar
                           </button>
                         </div>
-                      </>
+                      </div>
                     )}
                   </li>
-                ))
-              ) : (
-                <p>No hay categorías disponibles</p>
-              )}
-            </ul>
-          )}
-        </div>
+                ))}
+              </ul>
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                No hay categorías registradas
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );
