@@ -6,30 +6,58 @@ import Layout from "app/layout/Layout";
 interface CategoriaGasto {
   categoria_gasto_id: number;
   nombre_categoria_gasto: string;
+  created_at?: string; // Opcional si lo necesitas
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: CategoriaGasto[];
+  message?: string;
 }
 
 const CategoriasGastosPage: React.FC = () => {
   const [categorias, setCategorias] = useState<CategoriaGasto[]>([]);
   const [nuevaCategoria, setNuevaCategoria] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategorias();
   }, []);
 
   const fetchCategorias = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await fetch(
         "http://localhost:3000/api/categorias-gastos"
       );
-      const data = await response.json();
-      setCategorias(data);
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const result: ApiResponse = await response.json();
+
+      if (result.success && result.data) {
+        setCategorias(result.data);
+      } else {
+        throw new Error(result.message || "Estructura de datos inesperada");
+      }
     } catch (error) {
       console.error("Error al obtener las categorías de gastos:", error);
+      setError("No se pudieron cargar las categorías");
+      setCategorias([]); // Resetear a array vacío para evitar errores
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateCategoria = async () => {
-    if (!nuevaCategoria.trim()) return;
+    if (!nuevaCategoria.trim()) {
+      setError("El nombre de la categoría no puede estar vacío");
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -43,14 +71,18 @@ const CategoriasGastosPage: React.FC = () => {
         }
       );
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setNuevaCategoria("");
-        fetchCategorias(); // Recargar la lista de categorías
+        setError(null);
+        fetchCategorias();
       } else {
-        console.error("Error al crear la categoría de gasto");
+        throw new Error(result.message || "Error al crear la categoría");
       }
     } catch (error) {
       console.error("Error al crear la categoría de gasto:", error);
+      setError(error instanceof Error ? error.message : "Error desconocido");
     }
   };
 
@@ -76,13 +108,31 @@ const CategoriasGastosPage: React.FC = () => {
               Agregar Categoría
             </button>
           </div>
-          <ul className="mt-4">
-            {categorias.map((categoria) => (
-              <li key={categoria.categoria_gasto_id} className="p-2 border-b">
-                {categoria.nombre_categoria_gasto}
-              </li>
-            ))}
-          </ul>
+
+          {error && (
+            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <p>Cargando categorías...</p>
+          ) : (
+            <ul className="mt-4">
+              {categorias.length > 0 ? (
+                categorias.map((categoria) => (
+                  <li
+                    key={categoria.categoria_gasto_id}
+                    className="p-2 border-b"
+                  >
+                    {categoria.nombre_categoria_gasto}
+                  </li>
+                ))
+              ) : (
+                <p>No hay categorías disponibles</p>
+              )}
+            </ul>
+          )}
         </div>
       </div>
     </Layout>

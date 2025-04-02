@@ -3,11 +3,32 @@
 import React, { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
 
+interface Proveedor {
+  proveedor_id: number;
+  nombre_proveedor: string;
+}
+
 interface Compra {
   compra_id: number;
   proveedor_id: number;
   fecha_compra: string;
-  total_compra: number;
+  total_compra: number | string;
+  proveedor?: Proveedor;
+  detalleCompras?: Array<{
+    detalle_compra_id: number;
+    producto_id: number;
+    cantidad: number;
+    precio_unitario: number;
+    producto?: {
+      nombre_producto: string;
+    };
+  }>;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: Compra[];
+  message?: string;
 }
 
 const ComprasPage: React.FC = () => {
@@ -17,26 +38,52 @@ const ComprasPage: React.FC = () => {
     fecha_compra: "",
     total_compra: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCompras();
   }, []);
 
-  // Obtener las compras desde la API
   const fetchCompras = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await fetch("http://localhost:3000/api/compras");
-      const data = await response.json();
-      setCompras(data);
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const result: ApiResponse = await response.json();
+
+      if (result.success && Array.isArray(result.data)) {
+        // Aseguramos que total_compra sea número
+        const comprasFormateadas = result.data.map((compra) => ({
+          ...compra,
+          total_compra:
+            typeof compra.total_compra === "string"
+              ? parseFloat(compra.total_compra)
+              : compra.total_compra,
+        }));
+        setCompras(comprasFormateadas);
+      } else {
+        throw new Error(result.message || "Estructura de datos inesperada");
+      }
     } catch (error) {
       console.error("Error al obtener las compras:", error);
+      setError("No se pudieron cargar las compras");
+      setCompras([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Crear una nueva compra
   const handleCreateCompra = async () => {
-    if (!nuevaCompra.fecha_compra.trim() || nuevaCompra.proveedor_id <= 0)
+    if (!nuevaCompra.fecha_compra.trim() || nuevaCompra.proveedor_id <= 0) {
+      setError("Proveedor y fecha son obligatorios");
       return;
+    }
 
     try {
       const response = await fetch("http://localhost:3000/api/compras", {
@@ -44,21 +91,29 @@ const ComprasPage: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(nuevaCompra),
+        body: JSON.stringify({
+          proveedor_id: nuevaCompra.proveedor_id,
+          fecha_compra: nuevaCompra.fecha_compra,
+          total_compra: parseFloat(nuevaCompra.total_compra.toString()),
+        }),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setNuevaCompra({
           proveedor_id: 0,
           fecha_compra: "",
           total_compra: 0,
         });
-        fetchCompras(); // Actualiza la lista después de crear
+        setError(null);
+        fetchCompras();
       } else {
-        console.error("Error al crear la compra");
+        throw new Error(result.message || "Error al crear la compra");
       }
     } catch (error) {
       console.error("Error al crear la compra:", error);
+      setError(error instanceof Error ? error.message : "Error desconocido");
     }
   };
 
@@ -71,6 +126,14 @@ const ComprasPage: React.FC = () => {
           ? Number(value)
           : value,
     }));
+  };
+
+  const formatCurrency = (value: number | string): string => {
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "USD",
+    }).format(isNaN(num) ? 0 : num);
   };
 
   return (
@@ -90,8 +153,9 @@ const ComprasPage: React.FC = () => {
                 name="proveedor_id"
                 className="w-full p-2 border border-gray-300 rounded-lg"
                 placeholder="ID del proveedor"
-                value={nuevaCompra.proveedor_id}
+                value={nuevaCompra.proveedor_id || ""}
                 onChange={handleInputChange}
+                min="1"
               />
             </div>
             <div>
@@ -102,6 +166,7 @@ const ComprasPage: React.FC = () => {
                 className="w-full p-2 border border-gray-300 rounded-lg"
                 value={nuevaCompra.fecha_compra}
                 onChange={handleInputChange}
+                required
               />
             </div>
             <div>
@@ -112,48 +177,76 @@ const ComprasPage: React.FC = () => {
                 className="w-full p-2 border border-gray-300 rounded-lg"
                 placeholder="Total"
                 step="0.01"
-                value={nuevaCompra.total_compra}
+                min="0"
+                value={nuevaCompra.total_compra || ""}
                 onChange={handleInputChange}
               />
             </div>
             <button
               className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 col-span-3"
               onClick={handleCreateCompra}
+              disabled={loading}
             >
-              Registrar Compra
+              {loading ? "Procesando..." : "Registrar Compra"}
             </button>
           </div>
 
+          {error && (
+            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           {/* Lista de compras */}
           <div className="mt-6 overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-2 px-4 border">ID</th>
-                  <th className="py-2 px-4 border">Proveedor ID</th>
-                  <th className="py-2 px-4 border">Fecha</th>
-                  <th className="py-2 px-4 border">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {compras.map((compra) => (
-                  <tr key={compra.compra_id} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border text-center">
-                      {compra.compra_id}
-                    </td>
-                    <td className="py-2 px-4 border text-center">
-                      {compra.proveedor_id}
-                    </td>
-                    <td className="py-2 px-4 border text-center">
-                      {new Date(compra.fecha_compra).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 px-4 border text-center">
-                      ${compra.total_compra.toFixed(2)}
-                    </td>
+            {loading ? (
+              <div className="text-center py-4">
+                <p>Cargando compras...</p>
+              </div>
+            ) : (
+              <table className="min-w-full bg-white border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-4 border">ID</th>
+                    <th className="py-2 px-4 border">Proveedor</th>
+                    <th className="py-2 px-4 border">Fecha</th>
+                    <th className="py-2 px-4 border">Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {compras.length > 0 ? (
+                    compras.map((compra) => (
+                      <tr key={compra.compra_id} className="hover:bg-gray-50">
+                        <td className="py-2 px-4 border text-center">
+                          {compra.compra_id}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {compra.proveedor?.nombre_proveedor ||
+                            `Proveedor #${compra.proveedor_id}`}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {new Date(compra.fecha_compra).toLocaleDateString(
+                            "es-ES"
+                          )}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {formatCurrency(compra.total_compra)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-4 text-center text-gray-500"
+                      >
+                        No hay compras registradas
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

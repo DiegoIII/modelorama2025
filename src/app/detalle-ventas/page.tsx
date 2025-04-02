@@ -10,28 +10,34 @@ interface DetalleVenta {
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
+  venta?: {
+    venta_id: number;
+    fecha_venta: string;
+  };
+  producto?: {
+    producto_id: number;
+    nombre_producto: string;
+  };
 }
 
-interface Producto {
-  producto_id: number;
-  nombre: string;
-}
-
-interface Venta {
-  venta_id: number;
-  fecha_venta: string;
+interface ApiResponse {
+  success: boolean;
+  data: DetalleVenta[];
+  message?: string;
 }
 
 const DetalleVentasPage: React.FC = () => {
   const [detalles, setDetalles] = useState<DetalleVenta[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [ventas, setVentas] = useState<Venta[]>([]);
+  const [productos, setProductos] = useState<any[]>([]);
+  const [ventas, setVentas] = useState<any[]>([]);
   const [nuevoDetalle, setNuevoDetalle] = useState({
     venta_id: "",
     producto_id: "",
     cantidad: 1,
     precio_unitario: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDetalleVentas();
@@ -41,12 +47,28 @@ const DetalleVentasPage: React.FC = () => {
 
   // Obtener detalle_ventas
   const fetchDetalleVentas = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await fetch("http://localhost:3000/api/detalle-ventas");
-      const data = await response.json();
-      setDetalles(data);
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const result: ApiResponse = await response.json();
+
+      if (result.success && Array.isArray(result.data)) {
+        setDetalles(result.data);
+      } else {
+        throw new Error(result.message || "Estructura de datos inesperada");
+      }
     } catch (error) {
       console.error("Error al obtener detalle de ventas:", error);
+      setError("No se pudieron cargar los detalles de venta");
+      setDetalles([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,7 +77,9 @@ const DetalleVentasPage: React.FC = () => {
     try {
       const response = await fetch("http://localhost:3000/api/productos");
       const data = await response.json();
-      setProductos(data);
+      if (data.success) {
+        setProductos(data.data);
+      }
     } catch (error) {
       console.error("Error al obtener productos:", error);
     }
@@ -66,7 +90,9 @@ const DetalleVentasPage: React.FC = () => {
     try {
       const response = await fetch("http://localhost:3000/api/ventas");
       const data = await response.json();
-      setVentas(data);
+      if (data.success) {
+        setVentas(data.data);
+      }
     } catch (error) {
       console.error("Error al obtener ventas:", error);
     }
@@ -76,10 +102,12 @@ const DetalleVentasPage: React.FC = () => {
   const handleCreateDetalleVenta = async () => {
     const { venta_id, producto_id, cantidad, precio_unitario } = nuevoDetalle;
 
-    if (!venta_id || !producto_id || cantidad <= 0 || precio_unitario <= 0)
+    if (!venta_id || !producto_id || cantidad <= 0 || precio_unitario <= 0) {
+      setError(
+        "Todos los campos son obligatorios y deben ser valores positivos"
+      );
       return;
-
-    const subtotal = cantidad * precio_unitario;
+    }
 
     try {
       const response = await fetch("http://localhost:3000/api/detalle-ventas", {
@@ -92,24 +120,35 @@ const DetalleVentasPage: React.FC = () => {
           producto_id: parseInt(producto_id),
           cantidad,
           precio_unitario,
-          subtotal,
+          subtotal: cantidad * precio_unitario,
         }),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setNuevoDetalle({
           venta_id: "",
           producto_id: "",
           cantidad: 1,
           precio_unitario: 0,
         });
-        fetchDetalleVentas(); // Actualizar la lista
+        setError(null);
+        fetchDetalleVentas();
       } else {
-        console.error("Error al crear detalle de venta");
+        throw new Error(result.message || "Error al crear el detalle de venta");
       }
     } catch (error) {
       console.error("Error al crear detalle de venta:", error);
+      setError(error instanceof Error ? error.message : "Error desconocido");
     }
+  };
+
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "USD",
+    }).format(isNaN(value) ? 0 : value);
   };
 
   return (
@@ -121,84 +160,162 @@ const DetalleVentasPage: React.FC = () => {
 
         <div className="bg-white p-6 rounded-xl shadow-lg">
           {/* Formulario para agregar detalle de venta */}
-          <div className="mb-4 space-y-2">
-            <select
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              value={nuevoDetalle.venta_id}
-              onChange={(e) =>
-                setNuevoDetalle({ ...nuevoDetalle, venta_id: e.target.value })
-              }
-            >
-              <option value="">Selecciona una venta</option>
-              {ventas.map((venta) => (
-                <option key={venta.venta_id} value={venta.venta_id}>
-                  Venta #{venta.venta_id} - {venta.fecha_venta}
-                </option>
-              ))}
-            </select>
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-gray-700 mb-1">Venta</label>
+              <select
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                value={nuevoDetalle.venta_id}
+                onChange={(e) =>
+                  setNuevoDetalle({ ...nuevoDetalle, venta_id: e.target.value })
+                }
+              >
+                <option value="">Selecciona una venta</option>
+                {ventas.map((venta) => (
+                  <option key={venta.venta_id} value={venta.venta_id}>
+                    Venta #{venta.venta_id} -{" "}
+                    {new Date(venta.fecha_venta).toLocaleDateString()}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              value={nuevoDetalle.producto_id}
-              onChange={(e) =>
-                setNuevoDetalle({
-                  ...nuevoDetalle,
-                  producto_id: e.target.value,
-                })
-              }
-            >
-              <option value="">Selecciona un producto</option>
-              {productos.map((producto) => (
-                <option key={producto.producto_id} value={producto.producto_id}>
-                  {producto.nombre}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-gray-700 mb-1">Producto</label>
+              <select
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                value={nuevoDetalle.producto_id}
+                onChange={(e) =>
+                  setNuevoDetalle({
+                    ...nuevoDetalle,
+                    producto_id: e.target.value,
+                  })
+                }
+              >
+                <option value="">Selecciona un producto</option>
+                {productos.map((producto) => (
+                  <option
+                    key={producto.producto_id}
+                    value={producto.producto_id}
+                  >
+                    {producto.nombre_producto || producto.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <input
-              type="number"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              placeholder="Cantidad"
-              value={nuevoDetalle.cantidad}
-              onChange={(e) =>
-                setNuevoDetalle({
-                  ...nuevoDetalle,
-                  cantidad: Number(e.target.value),
-                })
-              }
-            />
+            <div>
+              <label className="block text-gray-700 mb-1">Cantidad</label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                placeholder="Cantidad"
+                min="1"
+                value={nuevoDetalle.cantidad || ""}
+                onChange={(e) =>
+                  setNuevoDetalle({
+                    ...nuevoDetalle,
+                    cantidad: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
 
-            <input
-              type="number"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              placeholder="Precio unitario"
-              value={nuevoDetalle.precio_unitario}
-              onChange={(e) =>
-                setNuevoDetalle({
-                  ...nuevoDetalle,
-                  precio_unitario: Number(e.target.value),
-                })
-              }
-            />
+            <div>
+              <label className="block text-gray-700 mb-1">
+                Precio Unitario
+              </label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                placeholder="Precio"
+                step="0.01"
+                min="0.01"
+                value={nuevoDetalle.precio_unitario || ""}
+                onChange={(e) =>
+                  setNuevoDetalle({
+                    ...nuevoDetalle,
+                    precio_unitario: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
 
             <button
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 col-span-4"
               onClick={handleCreateDetalleVenta}
+              disabled={loading}
             >
-              Agregar Detalle de Venta
+              {loading ? "Procesando..." : "Agregar Detalle de Venta"}
             </button>
           </div>
 
+          {error && (
+            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           {/* Lista de detalles de venta */}
-          <ul className="mt-4">
-            {detalles.map((detalle) => (
-              <li key={detalle.detalle_venta_id} className="p-2 border-b">
-                Venta #{detalle.venta_id} - Producto #{detalle.producto_id} -
-                Cantidad: {detalle.cantidad} - Precio: {detalle.precio_unitario}{" "}
-                - Subtotal: {detalle.subtotal}
-              </li>
-            ))}
-          </ul>
+          <div className="mt-6 overflow-x-auto">
+            {loading ? (
+              <div className="text-center py-4">
+                <p>Cargando detalles de venta...</p>
+              </div>
+            ) : (
+              <table className="min-w-full bg-white border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-4 border">ID</th>
+                    <th className="py-2 px-4 border">Venta</th>
+                    <th className="py-2 px-4 border">Producto</th>
+                    <th className="py-2 px-4 border">Cantidad</th>
+                    <th className="py-2 px-4 border">Precio Unitario</th>
+                    <th className="py-2 px-4 border">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detalles.length > 0 ? (
+                    detalles.map((detalle) => (
+                      <tr
+                        key={detalle.detalle_venta_id}
+                        className="hover:bg-gray-50"
+                      >
+                        <td className="py-2 px-4 border text-center">
+                          {detalle.detalle_venta_id}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          Venta #{detalle.venta_id}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {detalle.producto?.nombre_producto ||
+                            `Producto #${detalle.producto_id}`}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {detalle.cantidad}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {formatCurrency(detalle.precio_unitario)}
+                        </td>
+                        <td className="py-2 px-4 border text-center">
+                          {formatCurrency(detalle.subtotal)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-4 text-center text-gray-500"
+                      >
+                        No hay detalles de venta registrados
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

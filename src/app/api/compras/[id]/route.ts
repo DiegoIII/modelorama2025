@@ -21,15 +21,18 @@ export async function PATCH(
     const body = await req.json();
     const { proveedor_id, fecha_compra, total_compra } = body;
 
-    // Verificar si la compra existe
-    const compraExiste = await prisma.compras.findUnique({
-      where: { compra_id: compraId },
-    });
-
-    if (!compraExiste) {
+    // Validaciones
+    if (!proveedor_id || isNaN(proveedor_id)) {
       return NextResponse.json(
-        { success: false, message: "Compra no encontrada" },
-        { status: 404 }
+        { success: false, message: "ID de proveedor inválido" },
+        { status: 400 }
+      );
+    }
+
+    if (total_compra === undefined || isNaN(parseFloat(total_compra))) {
+      return NextResponse.json(
+        { success: false, message: "Total de compra inválido" },
+        { status: 400 }
       );
     }
 
@@ -37,20 +40,50 @@ export async function PATCH(
     const compraActualizada = await prisma.compras.update({
       where: { compra_id: compraId },
       data: {
-        proveedor_id,
-        fecha_compra,
-        total_compra,
+        proveedor_id: parseInt(proveedor_id),
+        fecha_compra: fecha_compra ? new Date(fecha_compra) : undefined,
+        total_compra: parseFloat(total_compra),
+      },
+      include: {
+        proveedor: true,
+        detalleCompras: true,
       },
     });
 
     return NextResponse.json(
-      { success: true, data: compraActualizada },
+      {
+        success: true,
+        message: "Compra actualizada exitosamente",
+        data: compraActualizada,
+      },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Error en PATCH /api/compras/[id]:", error);
+  } catch (error: any) {
+    console.error("Error en PATCH /api/compras/[id]:", error.message);
+
+    if (error.code === "P2025") {
+      return NextResponse.json(
+        { success: false, message: "Compra no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    if (error.code === "P2003") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "El proveedor especificado no existe",
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, message: "Error actualizando la compra" },
+      {
+        success: false,
+        message: "Error actualizando la compra",
+        error: error.message,
+      },
       { status: 500 }
     );
   }
@@ -73,19 +106,7 @@ export async function DELETE(
       );
     }
 
-    // Verificar si la compra existe antes de eliminarla
-    const compraExiste = await prisma.compras.findUnique({
-      where: { compra_id: compraId },
-    });
-
-    if (!compraExiste) {
-      return NextResponse.json(
-        { success: false, message: "Compra no encontrada" },
-        { status: 404 }
-      );
-    }
-
-    // Verificar si hay detalles de compra asociados
+    // Verificar si hay detalles de compra asociados primero
     const detallesAsociados = await prisma.detalleCompras.findFirst({
       where: { compra_id: compraId },
     });
@@ -106,13 +127,28 @@ export async function DELETE(
     });
 
     return NextResponse.json(
-      { success: true, message: "Compra eliminada" },
+      {
+        success: true,
+        message: "Compra eliminada exitosamente",
+      },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Error en DELETE /api/compras/[id]:", error);
+  } catch (error: any) {
+    console.error("Error en DELETE /api/compras/[id]:", error.message);
+
+    if (error.code === "P2025") {
+      return NextResponse.json(
+        { success: false, message: "Compra no encontrada" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, message: "Error eliminando la compra" },
+      {
+        success: false,
+        message: "Error eliminando la compra",
+        error: error.message,
+      },
       { status: 500 }
     );
   }

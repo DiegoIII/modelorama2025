@@ -21,44 +21,62 @@ export async function PATCH(
     const body = await req.json();
     const { nombre_categoria_gasto } = body;
 
-    if (!nombre_categoria_gasto) {
+    if (!nombre_categoria_gasto || typeof nombre_categoria_gasto !== "string") {
       return NextResponse.json(
         {
           success: false,
-          message: "Debe proporcionar un nombre para actualizar",
+          message: "Debe proporcionar un nombre válido para actualizar",
         },
         { status: 400 }
       );
     }
 
-    // Verificar si la categoría de gasto existe
-    const categoriaExiste = await prisma.categoriasGastos.findUnique({
+    const categoriaActualizada = await prisma.categoriasGastos.update({
       where: { categoria_gasto_id: categoriaId },
+      data: {
+        nombre_categoria_gasto: nombre_categoria_gasto.trim(),
+      },
+      select: {
+        categoria_gasto_id: true,
+        nombre_categoria_gasto: true,
+        created_at: true,
+      },
     });
 
-    if (!categoriaExiste) {
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Categoría actualizada exitosamente",
+        data: categoriaActualizada,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Error en PATCH /api/categorias-gastos/[id]:", error.message);
+
+    if (error.code === "P2025") {
       return NextResponse.json(
         { success: false, message: "Categoría de gasto no encontrada" },
         { status: 404 }
       );
     }
 
-    // Actualizar la categoría de gasto
-    const categoriaActualizada = await prisma.categoriasGastos.update({
-      where: { categoria_gasto_id: categoriaId },
-      data: {
-        nombre_categoria_gasto,
-      },
-    });
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "El nombre de la categoría ya existe",
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json(
-      { success: true, data: categoriaActualizada },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error en PATCH /api/categorias-gastos/[id]:", error);
-    return NextResponse.json(
-      { success: false, message: "Error actualizando la categoría de gasto" },
+      {
+        success: false,
+        message: "Error actualizando la categoría de gasto",
+        error: error.message,
+      },
       { status: 500 }
     );
   }
@@ -81,24 +99,31 @@ export async function DELETE(
       );
     }
 
-    // Verificar si la categoría de gasto existe antes de eliminarla
-    const categoriaExiste = await prisma.categoriasGastos.findUnique({
+    await prisma.categoriasGastos.delete({
       where: { categoria_gasto_id: categoriaId },
     });
 
-    if (!categoriaExiste) {
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Categoría de gasto eliminada exitosamente",
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error(
+      "Error en DELETE /api/categorias-gastos/[id]:",
+      error.message
+    );
+
+    if (error.code === "P2025") {
       return NextResponse.json(
         { success: false, message: "Categoría de gasto no encontrada" },
         { status: 404 }
       );
     }
 
-    // Verificar si hay gastos asociados a la categoría
-    const gastosAsociados = await prisma.gastos.findFirst({
-      where: { categoria_gasto_id: categoriaId },
-    });
-
-    if (gastosAsociados) {
+    if (error.code === "P2003") {
       return NextResponse.json(
         {
           success: false,
@@ -108,19 +133,12 @@ export async function DELETE(
       );
     }
 
-    // Eliminar la categoría de gasto
-    await prisma.categoriasGastos.delete({
-      where: { categoria_gasto_id: categoriaId },
-    });
-
     return NextResponse.json(
-      { success: true, message: "Categoría de gasto eliminada" },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error en DELETE /api/categorias-gastos/[id]:", error);
-    return NextResponse.json(
-      { success: false, message: "Error eliminando la categoría de gasto" },
+      {
+        success: false,
+        message: "Error eliminando la categoría de gasto",
+        error: error.message,
+      },
       { status: 500 }
     );
   }

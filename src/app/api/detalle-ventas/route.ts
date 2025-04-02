@@ -6,20 +6,43 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET() {
   try {
-    console.log("Obteniendo todos los detalles de ventas...");
-
     const detallesVentas = await prisma.detalleVentas.findMany({
       include: {
-        venta: true, // Incluyendo los detalles de la venta relacionada
-        producto: true, // Incluyendo los detalles del producto relacionado
+        venta: {
+          select: {
+            venta_id: true,
+            fecha_venta: true,
+            total_venta: true,
+          },
+        },
+        producto: {
+          select: {
+            producto_id: true,
+            nombre: true, // Assuming the correct property name is 'nombre'
+            precio_venta: true,
+          },
+        },
+      },
+      orderBy: {
+        detalle_venta_id: "desc",
       },
     });
 
-    return NextResponse.json(detallesVentas, { status: 200 });
-  } catch (error) {
-    console.error("Error en GET /api/detalle-ventas:", error);
     return NextResponse.json(
-      { success: false, message: "Error obteniendo los detalles de ventas" },
+      {
+        success: true,
+        data: detallesVentas,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Error en GET /api/detalle-ventas:", error.message);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Error obteniendo los detalles de ventas",
+        error: error.message,
+      },
       { status: 500 }
     );
   }
@@ -31,42 +54,123 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { venta_id, producto_id, cantidad, precio_unitario, subtotal } = body;
 
-    if (
-      !venta_id ||
-      !producto_id ||
-      !cantidad ||
-      !precio_unitario ||
-      !subtotal
-    ) {
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { success: false, message: "Cuerpo de la solicitud inválido" },
+        { status: 400 }
+      );
+    }
+
+    const { venta_id, producto_id, cantidad, precio_unitario } = body;
+
+    // Validaciones
+    if (!venta_id || isNaN(venta_id)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Todos los campos son obligatorios",
+          message: "El ID de venta es obligatorio y debe ser un número válido",
         },
         { status: 400 }
       );
     }
 
-    const nuevoDetalleVenta = await prisma.detalleVentas.create({
+    if (!producto_id || isNaN(producto_id)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "El ID de producto es obligatorio y debe ser un número válido",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!cantidad || isNaN(cantidad) || cantidad <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "La cantidad es obligatoria y debe ser un número positivo",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!precio_unitario || isNaN(precio_unitario) || precio_unitario <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "El precio unitario es obligatorio y debe ser un número positivo",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Calcular subtotal automáticamente
+    const subtotal = parseFloat(precio_unitario) * parseInt(cantidad);
+
+    const nuevoDetalle = await prisma.detalleVentas.create({
       data: {
-        venta_id,
-        producto_id,
-        cantidad,
-        precio_unitario,
+        venta_id: parseInt(venta_id),
+        producto_id: parseInt(producto_id),
+        cantidad: parseInt(cantidad),
+        precio_unitario: parseFloat(precio_unitario),
         subtotal,
+      },
+      include: {
+        venta: {
+          select: {
+            venta_id: true,
+            fecha_venta: true,
+          },
+        },
+        producto: {
+          select: {
+            producto_id: true,
+            nombre: true,
+          },
+        },
+      },
+    });
+
+    // Actualizar el total de la venta
+    await prisma.ventas.update({
+      where: { venta_id: parseInt(venta_id) },
+      data: {
+        total_venta: {
+          increment: subtotal,
+        },
       },
     });
 
     return NextResponse.json(
-      { success: true, data: nuevoDetalleVenta },
+      {
+        success: true,
+        message: "Detalle de venta creado exitosamente",
+        data: nuevoDetalle,
+      },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error en POST /api/detalle-ventas:", error);
+  } catch (error: any) {
+    console.error("Error en POST /api/detalle-ventas:", error.message);
+
+    if (error.code === "P2003") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "La venta o producto especificado no existe",
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, message: "Error creando el detalle de venta" },
+      {
+        success: false,
+        message: "Error creando el detalle de venta",
+        error: error.message,
+      },
       { status: 500 }
     );
   }
