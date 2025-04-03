@@ -11,13 +11,17 @@ export async function middleware(req: NextRequest) {
   const isAuthRoute = authRoutes.includes(req.nextUrl.pathname);
 
   // Redirigir si ya está autenticado y trata de acceder a rutas de auth
-  if (isAuthRoute && token) {
-    try {
-      await jwtVerify(token, SECRET);
-      return NextResponse.redirect(new URL("/", req.url));
-    } catch {
-      // Token inválido, permitir acceso
-      return NextResponse.next();
+  if (isAuthRoute) {
+    if (token) {
+      try {
+        await jwtVerify(token, SECRET);
+        return NextResponse.redirect(new URL("/", req.url));
+      } catch {
+        // Token inválido, eliminar la cookie y permitir el acceso a login/register
+        const response = NextResponse.next();
+        response.cookies.delete("token");
+        return response;
+      }
     }
   }
 
