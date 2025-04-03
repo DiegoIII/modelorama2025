@@ -7,7 +7,7 @@ const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
-  const authRoutes = ["/login", "/register"];
+  const authRoutes = ["/login", "/signup"];
   const isAuthRoute = authRoutes.includes(req.nextUrl.pathname);
 
   // Redirigir si ya está autenticado y trata de acceder a rutas de auth
