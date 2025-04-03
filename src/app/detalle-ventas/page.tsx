@@ -2,6 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import Layout from "app/layout/Layout";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faReceipt,
+  faSpinner,
+  faPlus,
+  faBox,
+  faCashRegister,
+  faHashtag,
+  faDollarSign,
+  faCalculator,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface DetalleVenta {
   detalle_venta_id: number;
@@ -45,17 +56,11 @@ const DetalleVentasPage: React.FC = () => {
     fetchVentas();
   }, []);
 
-  // Obtener detalle_ventas
   const fetchDetalleVentas = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:3000/api/detalle-ventas");
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-
+      const response = await fetch("/api/detalle-ventas");
       const result: ApiResponse = await response.json();
 
       if (result.success && Array.isArray(result.data)) {
@@ -72,10 +77,9 @@ const DetalleVentasPage: React.FC = () => {
     }
   };
 
-  // Obtener productos
   const fetchProductos = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/productos");
+      const response = await fetch("/api/productos");
       const data = await response.json();
       if (data.success) {
         setProductos(data.data);
@@ -85,10 +89,9 @@ const DetalleVentasPage: React.FC = () => {
     }
   };
 
-  // Obtener ventas
   const fetchVentas = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/ventas");
+      const response = await fetch("/api/ventas");
       const data = await response.json();
       if (data.success) {
         setVentas(data.data);
@@ -98,7 +101,6 @@ const DetalleVentasPage: React.FC = () => {
     }
   };
 
-  // Crear nuevo detalle de venta
   const handleCreateDetalleVenta = async () => {
     const { venta_id, producto_id, cantidad, precio_unitario } = nuevoDetalle;
 
@@ -110,11 +112,9 @@ const DetalleVentasPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/detalle-ventas", {
+      const response = await fetch("/api/detalle-ventas", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           venta_id: parseInt(venta_id),
           producto_id: parseInt(producto_id),
@@ -153,18 +153,32 @@ const DetalleVentasPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Gestión de Detalles de Ventas
-        </h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-8">
+          <FontAwesomeIcon
+            icon={faReceipt}
+            className="text-3xl mr-3 text-[#F2B705]"
+          />
+          <h1 className="text-3xl font-bold text-[#031D40]">
+            Detalle de Ventas
+          </h1>
+        </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          {/* Formulario para agregar detalle de venta */}
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Formulario de nuevo detalle */}
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
+          <h2 className="text-xl font-semibold text-[#032059] mb-4 flex items-center">
+            <FontAwesomeIcon icon={faPlus} className="mr-2 text-[#F2B705]" />
+            Nuevo Detalle de Venta
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-gray-700 mb-1">Venta</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faCashRegister} className="mr-2" />
+                Venta
+              </label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 value={nuevoDetalle.venta_id}
                 onChange={(e) =>
                   setNuevoDetalle({ ...nuevoDetalle, venta_id: e.target.value })
@@ -181,9 +195,12 @@ const DetalleVentasPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1">Producto</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faBox} className="mr-2" />
+                Producto
+              </label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 value={nuevoDetalle.producto_id}
                 onChange={(e) =>
                   setNuevoDetalle({
@@ -205,10 +222,13 @@ const DetalleVentasPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1">Cantidad</label>
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faHashtag} className="mr-2" />
+                Cantidad
+              </label>
               <input
                 type="number"
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 placeholder="Cantidad"
                 min="1"
                 value={nuevoDetalle.cantidad || ""}
@@ -222,13 +242,14 @@ const DetalleVentasPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1">
+              <label className="text-[#031D40] font-medium mb-2 flex items-center">
+                <FontAwesomeIcon icon={faDollarSign} className="mr-2" />
                 Precio Unitario
               </label>
               <input
                 type="number"
-                className="w-full p-2 border border-gray-300 rounded-lg"
-                placeholder="Precio"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
+                placeholder="0.00"
                 step="0.01"
                 min="0.01"
                 value={nuevoDetalle.precio_unitario || ""}
@@ -240,64 +261,102 @@ const DetalleVentasPage: React.FC = () => {
                 }
               />
             </div>
-
-            <button
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 col-span-4"
-              onClick={handleCreateDetalleVenta}
-              disabled={loading}
-            >
-              {loading ? "Procesando..." : "Agregar Detalle de Venta"}
-            </button>
           </div>
 
+          <button
+            onClick={handleCreateDetalleVenta}
+            disabled={loading}
+            className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors w-full md:w-auto"
+          >
+            {loading ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                Procesando...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                Agregar Detalle
+              </>
+            )}
+          </button>
+
           {error && (
-            <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
               {error}
             </div>
           )}
+        </div>
 
-          {/* Lista de detalles de venta */}
-          <div className="mt-6 overflow-x-auto">
-            {loading ? (
-              <div className="text-center py-4">
-                <p>Cargando detalles de venta...</p>
-              </div>
-            ) : (
-              <table className="min-w-full bg-white border">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="py-2 px-4 border">ID</th>
-                    <th className="py-2 px-4 border">Venta</th>
-                    <th className="py-2 px-4 border">Producto</th>
-                    <th className="py-2 px-4 border">Cantidad</th>
-                    <th className="py-2 px-4 border">Precio Unitario</th>
-                    <th className="py-2 px-4 border">Subtotal</th>
+        {/* Listado de detalles */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 bg-[#031D40] text-white flex items-center">
+            <FontAwesomeIcon icon={faCalculator} className="mr-2" />
+            <h2 className="text-xl font-semibold">Historial de Detalles</h2>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <FontAwesomeIcon
+                icon={faSpinner}
+                spin
+                className="text-4xl text-[#032059] mb-4"
+              />
+              <p className="text-lg text-[#031D40]">Cargando detalles...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faHashtag} className="mr-1" /> ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faCashRegister} className="mr-1" />{" "}
+                      Venta
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faBox} className="mr-1" /> Producto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faHashtag} className="mr-1" />{" "}
+                      Cantidad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faDollarSign} className="mr-1" />{" "}
+                      Precio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
+                      <FontAwesomeIcon icon={faCalculator} className="mr-1" />{" "}
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white divide-y divide-gray-200">
                   {detalles.length > 0 ? (
                     detalles.map((detalle) => (
                       <tr
                         key={detalle.detalle_venta_id}
-                        className="hover:bg-gray-50"
+                        className="hover:bg-gray-50 transition-colors"
                       >
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {detalle.detalle_venta_id}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           Venta #{detalle.venta_id}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {detalle.producto?.nombre_producto ||
                             `Producto #${detalle.producto_id}`}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {detalle.cantidad}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                           {formatCurrency(detalle.precio_unitario)}
                         </td>
-                        <td className="py-2 px-4 border text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#032059]">
                           {formatCurrency(detalle.subtotal)}
                         </td>
                       </tr>
@@ -306,7 +365,7 @@ const DetalleVentasPage: React.FC = () => {
                     <tr>
                       <td
                         colSpan={6}
-                        className="py-4 text-center text-gray-500"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         No hay detalles de venta registrados
                       </td>
@@ -314,8 +373,8 @@ const DetalleVentasPage: React.FC = () => {
                   )}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

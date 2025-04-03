@@ -12,7 +12,9 @@ import {
   faHashtag,
   faDollarSign,
   faCalculator,
+  faSearch,
 } from "@fortawesome/free-solid-svg-icons";
+import DetalleComprasCard from "app/components/detalle-compras/DetalleComprasCard";
 
 interface DetalleCompra {
   detalle_compra_id: number;
@@ -24,10 +26,12 @@ interface DetalleCompra {
   compra?: {
     compra_id: number;
     fecha_compra: string;
+    total_compra: number;
   };
   producto?: {
     producto_id: number;
-    nombre_producto: string;
+    nombre: string;
+    precio_venta: number;
   };
 }
 
@@ -35,6 +39,18 @@ interface ApiResponse {
   success: boolean;
   data: DetalleCompra[];
   message?: string;
+}
+
+interface Producto {
+  producto_id: number;
+  nombre: string;
+  precio_venta: number;
+}
+
+interface Compra {
+  compra_id: number;
+  fecha_compra: string;
+  total_compra: number;
 }
 
 const DetalleComprasPage: React.FC = () => {
@@ -47,14 +63,30 @@ const DetalleComprasPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [compras, setCompras] = useState<any[]>([]);
-  const [productos, setProductos] = useState<any[]>([]);
+  const [compras, setCompras] = useState<Compra[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredDetalles, setFilteredDetalles] = useState<DetalleCompra[]>([]);
 
   useEffect(() => {
     fetchDetalles();
     fetchCompras();
     fetchProductos();
   }, []);
+
+  useEffect(() => {
+    const filtered = detalles.filter((detalle) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        detalle.producto?.nombre
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        detalle.compra_id.toString().includes(searchTerm) ||
+        detalle.detalle_compra_id.toString().includes(searchTerm);
+      return matchesSearch;
+    });
+    setFilteredDetalles(filtered);
+  }, [searchTerm, detalles]);
 
   const fetchDetalles = async () => {
     setLoading(true);
@@ -65,6 +97,7 @@ const DetalleComprasPage: React.FC = () => {
 
       if (result.success && Array.isArray(result.data)) {
         setDetalles(result.data);
+        setFilteredDetalles(result.data);
       } else {
         throw new Error(result.message || "Estructura de datos inesperada");
       }
@@ -72,6 +105,7 @@ const DetalleComprasPage: React.FC = () => {
       console.error("Error al obtener los detalles:", error);
       setError("No se pudieron cargar los detalles de compra");
       setDetalles([]);
+      setFilteredDetalles([]);
     } finally {
       setLoading(false);
     }
@@ -151,37 +185,75 @@ const DetalleComprasPage: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setNuevoDetalle((prev) => ({
-      ...prev,
-      [name]: [
-        "compra_id",
-        "producto_id",
-        "cantidad",
-        "precio_unitario",
-      ].includes(name)
-        ? Number(value)
-        : value,
-    }));
+
+    if (name === "producto_id") {
+      const productoSeleccionado = productos.find(
+        (p) => p.producto_id === Number(value)
+      );
+      setNuevoDetalle((prev) => ({
+        ...prev,
+        producto_id: Number(value),
+        precio_unitario:
+          productoSeleccionado?.precio_venta || prev.precio_unitario,
+      }));
+    } else {
+      setNuevoDetalle((prev) => ({
+        ...prev,
+        [name]: Number(value),
+      }));
+    }
+  };
+
+  const handleDeleteDetalle = async (detalleId: number) => {
+    try {
+      const response = await fetch(`/api/detalle-compras/${detalleId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setDetalles(detalles.filter((d) => d.detalle_compra_id !== detalleId));
+      }
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+      setError("Error al eliminar el detalle de compra");
+    }
   };
 
   const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("es-ES", {
+    return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: "USD",
+      currency: "MXN",
     }).format(isNaN(value) ? 0 : value);
   };
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-8">
-          <FontAwesomeIcon
-            icon={faReceipt}
-            className="text-3xl mr-3 text-[#F2B705]"
-          />
-          <h1 className="text-3xl font-bold text-[#031D40]">
-            Detalle de Compras
-          </h1>
+        {/* Encabezado */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div className="flex items-center mb-4 md:mb-0">
+            <FontAwesomeIcon
+              icon={faReceipt}
+              className="text-3xl mr-3 text-[#F2B705]"
+            />
+            <h1 className="text-3xl font-bold text-[#031D40]">
+              Detalle de Compras
+            </h1>
+          </div>
+
+          {/* Barra de búsqueda */}
+          <div className="relative w-full md:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#032059] focus:border-transparent"
+              placeholder="Buscar detalles..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Formulario de nuevo detalle */}
@@ -230,7 +302,7 @@ const DetalleComprasPage: React.FC = () => {
                     key={producto.producto_id}
                     value={producto.producto_id}
                   >
-                    {producto.nombre_producto}
+                    {producto.nombre} - {formatCurrency(producto.precio_venta)}
                   </option>
                 ))}
               </select>
@@ -270,23 +342,37 @@ const DetalleComprasPage: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleCreateDetalle}
-            disabled={loading}
-            className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors w-full md:w-auto"
-          >
-            {loading ? (
-              <>
-                <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                Agregar Detalle
-              </>
-            )}
-          </button>
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              {nuevoDetalle.cantidad > 0 &&
+                nuevoDetalle.precio_unitario > 0 && (
+                  <p className="text-lg font-semibold text-[#032059]">
+                    Subtotal:{" "}
+                    {formatCurrency(
+                      nuevoDetalle.cantidad * nuevoDetalle.precio_unitario
+                    )}
+                  </p>
+                )}
+            </div>
+
+            <button
+              onClick={handleCreateDetalle}
+              disabled={loading}
+              className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors w-full md:w-auto"
+            >
+              {loading ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                  Agregar Detalle
+                </>
+              )}
+            </button>
+          </div>
 
           {error && (
             <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
@@ -296,10 +382,20 @@ const DetalleComprasPage: React.FC = () => {
         </div>
 
         {/* Listado de detalles */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 bg-[#031D40] text-white flex items-center">
-            <FontAwesomeIcon icon={faCalculator} className="mr-2" />
-            <h2 className="text-xl font-semibold">Historial de Detalles</h2>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <FontAwesomeIcon
+                icon={faCalculator}
+                className="text-[#F2B705] mr-3"
+              />
+              <h2 className="text-2xl font-bold text-[#031D40]">
+                Detalles Registrados
+              </h2>
+            </div>
+            <p className="text-sm text-gray-600">
+              Mostrando {filteredDetalles.length} de {detalles.length} detalles
+            </p>
           </div>
 
           {loading ? (
@@ -311,75 +407,37 @@ const DetalleComprasPage: React.FC = () => {
               />
               <p className="text-lg text-[#031D40]">Cargando detalles...</p>
             </div>
+          ) : filteredDetalles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDetalles.map((detalle) => (
+                <DetalleComprasCard
+                  key={detalle.detalle_compra_id}
+                  detalle={detalle}
+                  onDelete={() =>
+                    handleDeleteDetalle(detalle.detalle_compra_id)
+                  }
+                />
+              ))}
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
-                      <FontAwesomeIcon icon={faHashtag} className="mr-1" /> ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
-                      <FontAwesomeIcon icon={faShoppingCart} className="mr-1" />{" "}
-                      Compra
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
-                      <FontAwesomeIcon icon={faBox} className="mr-1" /> Producto
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
-                      <FontAwesomeIcon icon={faHashtag} className="mr-1" />{" "}
-                      Cantidad
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
-                      <FontAwesomeIcon icon={faDollarSign} className="mr-1" />{" "}
-                      Precio
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-[#031D40] uppercase tracking-wider">
-                      <FontAwesomeIcon icon={faCalculator} className="mr-1" />{" "}
-                      Subtotal
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {detalles.length > 0 ? (
-                    detalles.map((detalle) => (
-                      <tr
-                        key={detalle.detalle_compra_id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
-                          {detalle.detalle_compra_id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
-                          Compra #{detalle.compra_id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
-                          {detalle.producto?.nombre_producto ||
-                            `Producto #${detalle.producto_id}`}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
-                          {detalle.cantidad}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
-                          {formatCurrency(detalle.precio_unitario)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#032059]">
-                          {formatCurrency(detalle.subtotal)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="px-6 py-4 text-center text-sm text-gray-500"
-                      >
-                        No hay detalles de compra registrados
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="text-center py-8 bg-blue-50 rounded-lg">
+              {searchTerm ? (
+                <>
+                  <p className="text-lg text-[#032059]">
+                    No se encontraron detalles que coincidan con la búsqueda
+                  </p>
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="mt-2 text-blue-600 hover:underline"
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </>
+              ) : (
+                <p className="text-lg text-[#032059]">
+                  No hay detalles de compra registrados
+                </p>
+              )}
             </div>
           )}
         </div>

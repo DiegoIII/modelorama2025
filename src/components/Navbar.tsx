@@ -29,9 +29,27 @@ interface NavLinkProps {
   icon: IconDefinition;
   text: string;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ href, icon, text, onClick }) => {
+const NavLink: React.FC<NavLinkProps> = ({
+  href,
+  icon,
+  text,
+  onClick,
+  disabled,
+}) => {
+  if (disabled) {
+    return (
+      <li className="opacity-50 cursor-not-allowed">
+        <div className="flex items-center px-3 py-2 rounded-lg text-white">
+          <FontAwesomeIcon icon={icon} className="mr-2" />
+          <span className="hidden sm:inline">{text}</span>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li>
       <Link
@@ -51,16 +69,18 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon, text, onClick }) => {
 };
 
 const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, initialize } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    // Verificar autenticación al montar el componente
+    initialize();
+  }, [initialize]);
 
   const navLinks = [
-    { href: "/", icon: faHome, text: "Inicio" },
+    { href: "/", icon: faHome, text: "Inicio", alwaysAvailable: true },
     { href: "/categoria-gastos", icon: faCoins, text: "Categoría Gastos" },
     { href: "/categorias", icon: faTags, text: "Categorías" },
     { href: "/compras", icon: faShoppingCart, text: "Compras" },
@@ -124,16 +144,23 @@ const Navbar: React.FC = () => {
             isMenuOpen ? "flex" : "hidden"
           } md:flex flex-col md:flex-row items-center w-full md:w-auto mt-4 md:mt-0`}
         >
-          {isAuthenticated ? (
-            <>
-              <ul className="flex flex-col md:flex-row flex-wrap justify-center gap-2 md:gap-4 w-full md:w-auto">
-                {navLinks.map((link) => (
-                  <NavLink key={link.href} {...link} onClick={closeMenu} />
-                ))}
-              </ul>
+          <ul className="flex flex-col md:flex-row flex-wrap justify-center gap-2 md:gap-4 w-full md:w-auto">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.href}
+                href={link.href}
+                icon={link.icon}
+                text={link.text}
+                onClick={closeMenu}
+                disabled={!link.alwaysAvailable && !isAuthenticated}
+              />
+            ))}
+          </ul>
 
-              {/* Área de usuario */}
-              <div className="flex flex-col md:flex-row items-center gap-4 mt-4 md:mt-0 md:ml-6 border-t md:border-t-0 border-[#032059] pt-4 md:pt-0 w-full md:w-auto">
+          {/* Área de usuario */}
+          <div className="flex flex-col md:flex-row items-center gap-4 mt-4 md:mt-0 md:ml-6 border-t md:border-t-0 border-[#032059] pt-4 md:pt-0 w-full md:w-auto">
+            {isAuthenticated ? (
+              <>
                 {user && (
                   <div className="flex items-center text-white">
                     <FontAwesomeIcon icon={faUser} className="mr-2" />
@@ -147,18 +174,18 @@ const Navbar: React.FC = () => {
                   <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
                   <span>Cerrar sesión</span>
                 </button>
-              </div>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              onClick={closeMenu}
-              className="flex items-center bg-[#F2B705] hover:bg-[#e0a904] text-[#031D40] font-semibold px-4 py-2 rounded-md transition-colors shadow-md w-full justify-center md:w-auto mt-4 md:mt-0"
-            >
-              <FontAwesomeIcon icon={faSignInAlt} className="mr-2" />
-              <span>Iniciar sesión</span>
-            </Link>
-          )}
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={closeMenu}
+                className="flex items-center bg-[#F2B705] hover:bg-[#e0a904] text-[#031D40] font-semibold px-4 py-2 rounded-md transition-colors shadow-md"
+              >
+                <FontAwesomeIcon icon={faSignInAlt} className="mr-2" />
+                <span>Iniciar sesión</span>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </nav>

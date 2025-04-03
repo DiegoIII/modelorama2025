@@ -1,8 +1,6 @@
 import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-/**
- * Obtener todos los detalles de compras (GET)
- */
+
 export async function GET() {
   try {
     const detallesCompras = await prisma.detalleCompras.findMany({
@@ -30,7 +28,17 @@ export async function GET() {
     return NextResponse.json(
       {
         success: true,
-        data: detallesCompras,
+        data: detallesCompras.map((detalle) => ({
+          ...detalle,
+          precio_unitario: Number(detalle.precio_unitario),
+          subtotal: Number(detalle.subtotal),
+          producto: detalle.producto
+            ? {
+                ...detalle.producto,
+                precio_venta: Number(detalle.producto.precio_venta),
+              }
+            : null,
+        })),
       },
       { status: 200 }
     );
@@ -47,9 +55,6 @@ export async function GET() {
   }
 }
 
-/**
- * Crear un nuevo detalle de compra (POST)
- */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -106,16 +111,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calcular subtotal automáticamente
-    const subtotal = parseFloat(precio_unitario) * parseInt(cantidad);
+    const subtotal = Number(precio_unitario) * Number(cantidad);
 
     const nuevoDetalle = await prisma.detalleCompras.create({
       data: {
-        compra_id: parseInt(compra_id),
-        producto_id: parseInt(producto_id),
-        cantidad: parseInt(cantidad),
-        precio_unitario: parseFloat(precio_unitario),
-        subtotal,
+        compra_id: Number(compra_id),
+        producto_id: Number(producto_id),
+        cantidad: Number(cantidad),
+        precio_unitario: Number(precio_unitario),
+        subtotal: subtotal,
       },
       include: {
         compra: {
@@ -128,6 +132,7 @@ export async function POST(req: NextRequest) {
           select: {
             producto_id: true,
             nombre: true,
+            precio_venta: true,
           },
         },
       },
@@ -135,7 +140,7 @@ export async function POST(req: NextRequest) {
 
     // Actualizar el total de la compra
     await prisma.compras.update({
-      where: { compra_id: parseInt(compra_id) },
+      where: { compra_id: Number(compra_id) },
       data: {
         total_compra: {
           increment: subtotal,
@@ -147,7 +152,17 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         message: "Detalle de compra creado exitosamente",
-        data: nuevoDetalle,
+        data: {
+          ...nuevoDetalle,
+          precio_unitario: Number(nuevoDetalle.precio_unitario),
+          subtotal: Number(nuevoDetalle.subtotal),
+          producto: nuevoDetalle.producto
+            ? {
+                ...nuevoDetalle.producto,
+                precio_venta: Number(nuevoDetalle.producto.precio_venta),
+              }
+            : null,
+        },
       },
       { status: 201 }
     );
