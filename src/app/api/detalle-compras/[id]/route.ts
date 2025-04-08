@@ -1,6 +1,10 @@
 import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper para extraer mensajes de error
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Error desconocido";
+
 /**
  * Actualizar un detalle de compra (PATCH)
  */
@@ -19,8 +23,8 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { compra_id, producto_id, cantidad, precio_unitario, subtotal } =
-      body;
+    // Se elimina 'subtotal' ya que se recalcula
+    const { compra_id, producto_id, cantidad, precio_unitario } = body;
 
     // Validaciones
     if (!compra_id || isNaN(compra_id)) {
@@ -59,7 +63,7 @@ export async function PATCH(
         producto_id: parseInt(producto_id),
         cantidad: parseInt(cantidad),
         precio_unitario: parseFloat(precio_unitario),
-        subtotal: parseFloat(precio_unitario) * parseInt(cantidad), // Calcular subtotal
+        subtotal: parseFloat(precio_unitario) * parseInt(cantidad), // Recalcula subtotal
       },
       include: {
         compra: {
@@ -71,7 +75,7 @@ export async function PATCH(
         producto: {
           select: {
             producto_id: true,
-            nombre: true, // Replace 'nombre_producto' with the correct property name
+            nombre: true,
           },
         },
       },
@@ -85,17 +89,26 @@ export async function PATCH(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error en PATCH /api/detalle-compras/[id]:", error.message);
+  } catch (error: unknown) {
+    console.error(
+      "Error en PATCH /api/detalle-compras/[id]:",
+      getErrorMessage(error)
+    );
 
-    if (error.code === "P2025") {
+    if (
+      error instanceof Error &&
+      (error as { code?: string }).code === "P2025"
+    ) {
       return NextResponse.json(
         { success: false, message: "Detalle de compra no encontrado" },
         { status: 404 }
       );
     }
 
-    if (error.code === "P2003") {
+    if (
+      error instanceof Error &&
+      (error as { code?: string }).code === "P2003"
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -109,7 +122,7 @@ export async function PATCH(
       {
         success: false,
         message: "Error actualizando el detalle de compra",
-        error: error.message,
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );
@@ -157,10 +170,16 @@ export async function DELETE(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error en DELETE /api/detalle-compras/[id]:", error.message);
+  } catch (error: unknown) {
+    console.error(
+      "Error en DELETE /api/detalle-compras/[id]:",
+      getErrorMessage(error)
+    );
 
-    if (error.code === "P2025") {
+    if (
+      error instanceof Error &&
+      (error as { code?: string }).code === "P2025"
+    ) {
       return NextResponse.json(
         { success: false, message: "Detalle de compra no encontrado" },
         { status: 404 }
@@ -171,7 +190,7 @@ export async function DELETE(
       {
         success: false,
         message: "Error eliminando el detalle de compra",
-        error: error.message,
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );

@@ -1,6 +1,10 @@
 import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper para extraer mensajes de error
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Error desconocido";
+
 export async function GET() {
   try {
     const detallesCompras = await prisma.detalleCompras.findMany({
@@ -42,13 +46,13 @@ export async function GET() {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error en GET /api/detalle-compras:", error.message);
+  } catch (error: unknown) {
+    console.error("Error en GET /api/detalle-compras:", getErrorMessage(error));
     return NextResponse.json(
       {
         success: false,
         message: "Error obteniendo los detalles de compras",
-        error: error.message,
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );
@@ -166,10 +170,17 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("Error en POST /api/detalle-compras:", error.message);
-
-    if (error.code === "P2003") {
+  } catch (error: unknown) {
+    console.error(
+      "Error en POST /api/detalle-compras:",
+      getErrorMessage(error)
+    );
+    // En caso de error en Prisma, verificamos el código
+    if (
+      error instanceof Error &&
+      // Utilizamos (error as any).code para extraer el código sin usar explicit any en la firma
+      (error as { code?: string }).code === "P2003"
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -183,7 +194,7 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         message: "Error creando el detalle de compra",
-        error: error.message,
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );

@@ -53,13 +53,20 @@ interface Compra {
   total_compra: number;
 }
 
+interface NuevoDetalle {
+  compra_id: string;
+  producto_id: string;
+  cantidad: string;
+  precio_unitario: string;
+}
+
 const DetalleComprasPage: React.FC = () => {
   const [detalles, setDetalles] = useState<DetalleCompra[]>([]);
-  const [nuevoDetalle, setNuevoDetalle] = useState({
-    compra_id: 0,
-    producto_id: 0,
-    cantidad: 0,
-    precio_unitario: 0,
+  const [nuevoDetalle, setNuevoDetalle] = useState<NuevoDetalle>({
+    compra_id: "",
+    producto_id: "",
+    cantidad: "",
+    precio_unitario: "",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +101,6 @@ const DetalleComprasPage: React.FC = () => {
     try {
       const response = await fetch("/api/detalle-compras");
       const result: ApiResponse = await response.json();
-
       if (result.success && Array.isArray(result.data)) {
         setDetalles(result.data);
         setFilteredDetalles(result.data);
@@ -127,6 +133,7 @@ const DetalleComprasPage: React.FC = () => {
     try {
       const response = await fetch("/api/productos");
       const data = await response.json();
+      // Se asume que el endpoint ahora devuelve { success: true, data: [...] }
       if (data.success) {
         setProductos(data.data);
       }
@@ -137,10 +144,10 @@ const DetalleComprasPage: React.FC = () => {
 
   const handleCreateDetalle = async () => {
     if (
-      nuevoDetalle.compra_id <= 0 ||
-      nuevoDetalle.producto_id <= 0 ||
-      nuevoDetalle.cantidad <= 0 ||
-      nuevoDetalle.precio_unitario <= 0
+      nuevoDetalle.compra_id === "" ||
+      nuevoDetalle.producto_id === "" ||
+      nuevoDetalle.cantidad === "" ||
+      nuevoDetalle.precio_unitario === ""
     ) {
       setError(
         "Todos los campos son obligatorios y deben ser valores positivos"
@@ -148,21 +155,42 @@ const DetalleComprasPage: React.FC = () => {
       return;
     }
 
+    // Convertir campos a número para la validación
+    const compra_id = Number(nuevoDetalle.compra_id);
+    const producto_id = Number(nuevoDetalle.producto_id);
+    const cantidad = Number(nuevoDetalle.cantidad);
+    const precio_unitario = Number(nuevoDetalle.precio_unitario);
+
+    if (
+      compra_id <= 0 ||
+      producto_id <= 0 ||
+      cantidad <= 0 ||
+      precio_unitario <= 0
+    ) {
+      setError("Todos los campos deben tener valores positivos");
+      return;
+    }
+
     try {
       const response = await fetch("/api/detalle-compras", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevoDetalle),
+        body: JSON.stringify({
+          compra_id,
+          producto_id,
+          cantidad,
+          precio_unitario,
+        }),
       });
 
       const result = await response.json();
-
       if (response.ok && result.success) {
+        // Limpiamos el formulario
         setNuevoDetalle({
-          compra_id: 0,
-          producto_id: 0,
-          cantidad: 0,
-          precio_unitario: 0,
+          compra_id: "",
+          producto_id: "",
+          cantidad: "",
+          precio_unitario: "",
         });
         setError(null);
         fetchDetalles();
@@ -185,21 +213,22 @@ const DetalleComprasPage: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-
     if (name === "producto_id") {
       const productoSeleccionado = productos.find(
         (p) => p.producto_id === Number(value)
       );
       setNuevoDetalle((prev) => ({
         ...prev,
-        producto_id: Number(value),
-        precio_unitario:
-          productoSeleccionado?.precio_venta || prev.precio_unitario,
+        producto_id: value,
+        // Actualizamos el precio unitario con el precio de venta del producto seleccionado (como string)
+        precio_unitario: productoSeleccionado
+          ? productoSeleccionado.precio_venta.toString()
+          : prev.precio_unitario,
       }));
     } else {
       setNuevoDetalle((prev) => ({
         ...prev,
-        [name]: Number(value),
+        [name]: value,
       }));
     }
   };
@@ -209,7 +238,6 @@ const DetalleComprasPage: React.FC = () => {
       const response = await fetch(`/api/detalle-compras/${detalleId}`, {
         method: "DELETE",
       });
-
       if (response.ok) {
         setDetalles(detalles.filter((d) => d.detalle_compra_id !== detalleId));
       }
@@ -272,7 +300,7 @@ const DetalleComprasPage: React.FC = () => {
               <select
                 name="compra_id"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
-                value={nuevoDetalle.compra_id || ""}
+                value={nuevoDetalle.compra_id}
                 onChange={handleInputChange}
               >
                 <option value="">Seleccione una compra</option>
@@ -293,7 +321,7 @@ const DetalleComprasPage: React.FC = () => {
               <select
                 name="producto_id"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
-                value={nuevoDetalle.producto_id || ""}
+                value={nuevoDetalle.producto_id}
                 onChange={handleInputChange}
               >
                 <option value="">Seleccione un producto</option>
@@ -319,7 +347,7 @@ const DetalleComprasPage: React.FC = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
                 placeholder="Cantidad"
                 min="1"
-                value={nuevoDetalle.cantidad || ""}
+                value={nuevoDetalle.cantidad}
                 onChange={handleInputChange}
               />
             </div>
@@ -336,7 +364,7 @@ const DetalleComprasPage: React.FC = () => {
                 placeholder="0.00"
                 step="0.01"
                 min="0.01"
-                value={nuevoDetalle.precio_unitario || ""}
+                value={nuevoDetalle.precio_unitario}
                 onChange={handleInputChange}
               />
             </div>
@@ -344,12 +372,13 @@ const DetalleComprasPage: React.FC = () => {
 
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              {nuevoDetalle.cantidad > 0 &&
-                nuevoDetalle.precio_unitario > 0 && (
+              {nuevoDetalle.cantidad !== "" &&
+                nuevoDetalle.precio_unitario !== "" && (
                   <p className="text-lg font-semibold text-[#032059]">
                     Subtotal:{" "}
                     {formatCurrency(
-                      nuevoDetalle.cantidad * nuevoDetalle.precio_unitario
+                      Number(nuevoDetalle.cantidad) *
+                        Number(nuevoDetalle.precio_unitario)
                     )}
                   </p>
                 )}

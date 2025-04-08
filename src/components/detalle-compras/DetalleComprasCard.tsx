@@ -7,7 +7,6 @@ import {
   faHashtag,
   faDollarSign,
   faCalculator,
-  faEdit,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";

@@ -7,23 +7,25 @@ export async function GET() {
       include: {
         categoria: {
           select: {
-            // Replace 'nombre' with the correct field name from your Prisma schema
+            // Se asume que el campo correcto es 'nombre_categoria'
             nombre_categoria: true,
           },
         },
         proveedor: {
           select: {
-            // Replace 'nombre' with the correct field name from your Prisma schema
+            // Se asume que el campo correcto es 'nombre_proveedor'
             nombre_proveedor: true,
           },
         },
       },
     });
 
+    // Mapear productos para formatear la respuesta
     const formattedProducts = productos.map((producto) => ({
       producto_id: producto.producto_id,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
+      // Si trabajas con Decimal, considera convertir a string o number según tus necesidades.
       precio_compra: producto.precio_compra,
       precio_venta: producto.precio_venta,
       categoria_id: producto.categoria_id,
@@ -35,11 +37,15 @@ export async function GET() {
       proveedor: producto.proveedor?.nombre_proveedor,
     }));
 
-    return NextResponse.json(formattedProducts, { status: 200 });
+    return NextResponse.json(
+      { success: true, data: formattedProducts },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error en GET /api/productos:", error);
     return NextResponse.json(
       {
+        success: false,
         error: "Error obteniendo productos",
         details: error instanceof Error ? error.message : "Error desconocido",
       },
@@ -56,12 +62,15 @@ export async function POST(req: NextRequest) {
     // Buscar categoría por nombre
     const categoria = await prisma.categorias.findFirst({
       where: { nombre_categoria: body.categoria },
-      select: { categoria_id: true }, // Ensure 'categoria_id' is included in the result
+      select: { categoria_id: true }, // Aseguramos que 'categoria_id' esté incluido
     });
 
     if (!categoria) {
       return NextResponse.json(
-        { error: `Categoría '${body.categoria}' no encontrada` },
+        {
+          success: false,
+          error: `Categoría '${body.categoria}' no encontrada`,
+        },
         { status: 404 }
       );
     }
@@ -73,18 +82,25 @@ export async function POST(req: NextRequest) {
 
     if (!proveedor) {
       return NextResponse.json(
-        { error: `Proveedor '${body.proveedor}' no encontrada` },
+        {
+          success: false,
+          error: `Proveedor '${body.proveedor}' no encontrado`,
+        },
         { status: 404 }
       );
     }
 
-    // Validación de campos
+    // Validación de campos obligatorios
     const requiredFields = ["nombre", "precio_compra", "precio_venta"];
     const missingFields = requiredFields.filter((field) => !(field in body));
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: "Campos obligatorios faltantes", missingFields },
+        {
+          success: false,
+          error: "Campos obligatorios faltantes",
+          missingFields,
+        },
         { status: 400 }
       );
     }
@@ -96,8 +112,8 @@ export async function POST(req: NextRequest) {
         descripcion: body.descripcion || "",
         precio_compra: parseFloat(body.precio_compra),
         precio_venta: parseFloat(body.precio_venta),
-        categoria_id: categoria.categoria_id, // Usar el ID encontrado
-        proveedor_id: proveedor.proveedor_id, // Usar el ID encontrado
+        categoria_id: categoria.categoria_id, // Usamos el ID encontrado
+        proveedor_id: proveedor.proveedor_id, // Usamos el ID encontrado
         stock_minimo: parseInt(body.stock_minimo) || 0,
         stock_maximo: parseInt(body.stock_maximo) || 100,
         created_at: new Date(),
@@ -122,7 +138,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error al crear producto:", error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      {
+        success: false,
+        error: "Error interno del servidor",
+      },
       { status: 500 }
     );
   }
