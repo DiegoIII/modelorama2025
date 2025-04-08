@@ -20,12 +20,12 @@ export async function GET() {
       },
     });
 
-    // Mapear productos para formatear la respuesta
+    // Mapear productos para formatear la respuesta.
+    // Agregamos valores por defecto para imagenUrl y estado.
     const formattedProducts = productos.map((producto) => ({
       producto_id: producto.producto_id,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
-      // Si trabajas con Decimal, considera convertir a string o number según tus necesidades.
       precio_compra: producto.precio_compra,
       precio_venta: producto.precio_venta,
       categoria_id: producto.categoria_id,
@@ -33,8 +33,11 @@ export async function GET() {
       stock_minimo: producto.stock_minimo,
       stock_maximo: producto.stock_maximo,
       created_at: producto.created_at,
-      categoria: producto.categoria?.nombre_categoria,
-      proveedor: producto.proveedor?.nombre_proveedor,
+      // Propiedades derivadas:
+      categoria: producto.categoria?.nombre_categoria || "Sin categoría",
+      proveedor: producto.proveedor?.nombre_proveedor || "Sin proveedor",
+      imagenUrl: "/placeholder.png",
+      estado: "activo",
     }));
 
     return NextResponse.json(
@@ -62,7 +65,7 @@ export async function POST(req: NextRequest) {
     // Buscar categoría por nombre
     const categoria = await prisma.categorias.findFirst({
       where: { nombre_categoria: body.categoria },
-      select: { categoria_id: true }, // Aseguramos que 'categoria_id' esté incluido
+      select: { categoria_id: true },
     });
 
     if (!categoria) {
@@ -112,8 +115,8 @@ export async function POST(req: NextRequest) {
         descripcion: body.descripcion || "",
         precio_compra: parseFloat(body.precio_compra),
         precio_venta: parseFloat(body.precio_venta),
-        categoria_id: categoria.categoria_id, // Usamos el ID encontrado
-        proveedor_id: proveedor.proveedor_id, // Usamos el ID encontrado
+        categoria_id: categoria.categoria_id,
+        proveedor_id: proveedor.proveedor_id,
         stock_minimo: parseInt(body.stock_minimo) || 0,
         stock_maximo: parseInt(body.stock_maximo) || 100,
         created_at: new Date(),

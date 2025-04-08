@@ -45,9 +45,8 @@ interface ApiProduct {
   stock_minimo: number;
   stock_maximo: number;
   categoria: string;
-  imagenUrl: string;
   proveedor: string;
-  estado?: string;
+  // La API no provee imagenUrl ni stock, por lo que asignaremos valores por defecto
 }
 
 const API_URL = "/api/productos";
@@ -69,27 +68,32 @@ const ProductsPage = () => {
       setLoading(true);
       setError(null);
       const res = await fetch(API_URL);
-
       if (!res.ok) throw new Error("Error al obtener productos");
-
-      const data = (await res.json()) as ApiProduct[];
-      setProducts(
-        data.map((p) => ({
-          id: p.producto_id.toString(),
-          producto_id: Number(p.producto_id) || 0,
-          nombre: p.nombre,
-          descripcion: p.descripcion,
-          precio_compra: Number(p.precio_compra) || 0,
-          precio_venta: Number(p.precio_venta) || 0,
-          stock: 0,
-          stock_minimo: Number(p.stock_minimo) || 0,
-          stock_maximo: Number(p.stock_maximo) || 100,
-          categoria: p.categoria || "Sin categoría",
-          imagenUrl: p.imagenUrl || "/placeholder.png",
-          proveedor: p.proveedor || "Sin proveedor",
-          estado: p.estado || "activo",
-        }))
-      );
+      const data = (await res.json()) as {
+        success: boolean;
+        data: ApiProduct[];
+      };
+      if (data.success) {
+        setProducts(
+          data.data.map((p) => ({
+            id: p.producto_id.toString(),
+            producto_id: Number(p.producto_id) || 0,
+            nombre: p.nombre,
+            descripcion: p.descripcion,
+            precio_compra: Number(p.precio_compra) || 0,
+            precio_venta: Number(p.precio_venta) || 0,
+            stock: 0, // Asigna un valor o ajusta según tu lógica de inventario
+            stock_minimo: Number(p.stock_minimo) || 0,
+            stock_maximo: Number(p.stock_maximo) || 100,
+            categoria: p.categoria || "Sin categoría",
+            imagenUrl: "/placeholder.png",
+            proveedor: p.proveedor || "Sin proveedor",
+            estado: "activo",
+          }))
+        );
+      } else {
+        throw new Error("Error en la respuesta del API");
+      }
     } catch (error) {
       console.error("Error al obtener productos:", error);
       setError("No se pudieron cargar los productos");
@@ -100,7 +104,6 @@ const ProductsPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Estás seguro de eliminar este producto?")) return;
-
     try {
       const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       if (res.ok) {

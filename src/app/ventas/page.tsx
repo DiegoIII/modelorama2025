@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import VentaForm from "app/components/VentaForm";
+import VentaForm, { VentaFormData } from "app/components/VentaForm";
 import Layout from "app/layout/Layout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -56,23 +56,16 @@ const VentasPage: React.FC = () => {
     }
   };
 
-  const handleCreateVenta = async (venta: {
-    total_venta: number;
-    detalles: DetalleVenta[];
-  }) => {
+  const handleCreateVenta = async (venta: VentaFormData) => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/ventas", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(venta),
       });
-
       if (!response.ok) throw new Error("Error al crear venta");
-
       fetchVentas();
     } catch (error) {
       console.error("Error creating venta:", error);
@@ -86,24 +79,17 @@ const VentasPage: React.FC = () => {
 
   const handleUpdateVenta = async (
     ventaId: number,
-    updatedVenta: {
-      total_venta: number;
-      detalles: DetalleVenta[];
-    }
+    updatedVenta: VentaFormData
   ) => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(`/api/ventas/${ventaId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        method: "PUT", // Usamos PUT para actualizar; ajusta al método que decidas
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedVenta),
       });
-
       if (!response.ok) throw new Error("Error al actualizar venta");
-
       fetchVentas();
       setEditingVenta(null);
     } catch (error) {
@@ -118,16 +104,13 @@ const VentasPage: React.FC = () => {
 
   const handleDeleteVenta = async (ventaId: number) => {
     if (!confirm("¿Estás seguro de eliminar esta venta?")) return;
-
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(`/api/ventas/${ventaId}`, {
         method: "DELETE",
       });
-
       if (!response.ok) throw new Error("Error al eliminar venta");
-
       fetchVentas();
     } catch (error) {
       console.error("Error deleting venta:", error);
@@ -183,7 +166,14 @@ const VentasPage: React.FC = () => {
                 ? (venta) => handleUpdateVenta(editingVenta.venta_id, venta)
                 : handleCreateVenta
             }
-            initialData={editingVenta}
+            initialData={
+              editingVenta
+                ? {
+                    total_venta: editingVenta.total_venta,
+                    detalles: editingVenta.detalles,
+                  }
+                : undefined
+            }
             onCancel={() => setEditingVenta(null)}
           />
           {loading && (
@@ -217,7 +207,7 @@ const VentasPage: React.FC = () => {
                 spin
                 className="text-4xl text-[#032059] mb-4"
               />
-              <p className="text-lg text-[#031D40]">Cargando ventas...</p>
+              <p className="text-lg text-[#032059]">Cargando ventas...</p>
             </div>
           ) : error ? (
             <div className="p-4 text-center text-red-600">{error}</div>

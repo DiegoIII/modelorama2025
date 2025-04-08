@@ -10,14 +10,12 @@ export async function PATCH(
 ) {
   try {
     const ventaId = parseInt(params.id);
-
     if (isNaN(ventaId)) {
       return NextResponse.json(
         { success: false, message: "ID inválido" },
         { status: 400 }
       );
     }
-
     const body = await req.json();
     const { fecha_venta, total_venta, detalleVentas } = body;
 
@@ -25,7 +23,6 @@ export async function PATCH(
     const ventaExiste = await prisma.ventas.findUnique({
       where: { venta_id: ventaId },
     });
-
     if (!ventaExiste) {
       return NextResponse.json(
         { success: false, message: "Venta no encontrada" },
@@ -33,7 +30,7 @@ export async function PATCH(
       );
     }
 
-    // Actualizar la venta
+    // Actualizar la venta (si se envía detalleVentas, se usa "set")
     const ventaActualizada = await prisma.ventas.update({
       where: { venta_id: ventaId },
       data: {
@@ -65,31 +62,26 @@ export async function DELETE(
 ) {
   try {
     const ventaId = parseInt(params.id);
-
     if (isNaN(ventaId)) {
       return NextResponse.json(
         { success: false, message: "ID inválido" },
         { status: 400 }
       );
     }
-
-    // Verificar si la venta existe antes de eliminarla
+    // Verificar si la venta existe
     const ventaExiste = await prisma.ventas.findUnique({
       where: { venta_id: ventaId },
     });
-
     if (!ventaExiste) {
       return NextResponse.json(
         { success: false, message: "Venta no encontrada" },
         { status: 404 }
       );
     }
-
-    // Verificar si hay detalles de venta asociados
+    // Verificar si hay detalles asociados (opcional)
     const detallesAsociados = await prisma.detalleVentas.findFirst({
       where: { venta_id: ventaId },
     });
-
     if (detallesAsociados) {
       return NextResponse.json(
         {
@@ -99,12 +91,9 @@ export async function DELETE(
         { status: 400 }
       );
     }
-
-    // Eliminar la venta
     await prisma.ventas.delete({
       where: { venta_id: ventaId },
     });
-
     return NextResponse.json(
       { success: true, message: "Venta eliminada" },
       { status: 200 }

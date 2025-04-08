@@ -9,11 +9,11 @@ export async function GET() {
     console.log("Obteniendo todas las ventas...");
     const ventas = await prisma.ventas.findMany({
       include: {
-        detalleVentas: true, // Incluir detalles de venta
+        detalleVentas: true, // Se incluyen los detalles de venta
       },
     });
 
-    // Mapear cada venta para agregar la propiedad "detalles"
+    // Se mapea cada venta para agregar la propiedad "detalles"
     const formattedVentas = ventas.map((venta) => ({
       ...venta,
       detalles: venta.detalleVentas, // Renombramos 'detalleVentas' a 'detalles'
@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Transformamos cada detalle (se espera que cada detalle incluya "producto_id", "cantidad" y "precio")
+    // Transformamos cada detalle para crear el detalle de venta
+    // Se espera que cada detalle incluya "producto_id", "cantidad" y "precio"
     interface Detalle {
       producto_id: number;
       cantidad: number;
@@ -61,14 +62,12 @@ export async function POST(req: NextRequest) {
     const detallesTransformed = detalles.map((detalle: Detalle) => ({
       producto_id: detalle.producto_id,
       cantidad: detalle.cantidad,
-      // Asumimos que el formulario envía la propiedad "precio" para el precio unitario
       precio_unitario: detalle.precio,
       subtotal: detalle.cantidad * detalle.precio,
     }));
 
     const nuevaVenta = await prisma.ventas.create({
       data: {
-        // Si se envía fecha_venta, se convierte a Date; de lo contrario se usa el valor por defecto
         fecha_venta: fecha_venta ? new Date(fecha_venta) : undefined,
         total_venta,
         detalleVentas: {

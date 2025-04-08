@@ -1,51 +1,131 @@
+"use client";
+
 import React, { useState } from "react";
 
-interface DetalleVenta {
+export interface DetalleVentaInput {
   producto_id: number;
   cantidad: number;
   precio: number;
+  nombre_producto?: string;
 }
 
-interface VentaFormProps {
-  onSubmit: (venta: {
-    total_venta: number;
-    detalles: DetalleVenta[];
-  }) => Promise<void>;
+export interface VentaFormData {
+  total_venta: number;
+  detalles: DetalleVentaInput[];
 }
 
-const VentaForm: React.FC<VentaFormProps> = ({ onSubmit }) => {
-  const [totalVenta, setTotalVenta] = useState<number>(0);
-  const [detalles, setDetalles] = useState<DetalleVenta[]>([]);
+export interface VentaFormProps {
+  onSubmit: (venta: VentaFormData) => Promise<void> | void;
+  initialData?: VentaFormData;
+  onCancel?: () => void;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const VentaForm: React.FC<VentaFormProps> = ({
+  onSubmit,
+  initialData,
+  onCancel,
+}) => {
+  const [totalVenta, setTotalVenta] = useState<number>(
+    initialData ? initialData.total_venta : 0
+  );
+  const [detalles, setDetalles] = useState<DetalleVentaInput[]>(
+    initialData ? initialData.detalles : []
+  );
+
+  // Campos temporales para agregar un detalle
+  const [productoId, setProductoId] = useState<string>("");
+  const [cantidad, setCantidad] = useState<string>("");
+  const [precio, setPrecio] = useState<string>("");
+
+  const addDetalle = () => {
+    if (!productoId || !cantidad || !precio) return;
+    const newDetalle: DetalleVentaInput = {
+      producto_id: Number(productoId),
+      cantidad: Number(cantidad),
+      precio: Number(precio),
+    };
+    setDetalles([...detalles, newDetalle]);
+    setProductoId("");
+    setCantidad("");
+    setPrecio("");
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await onSubmit({ total_venta: totalVenta, detalles });
-    } catch (error) {
-      console.error("Error al crear la venta:", error);
-    }
+    onSubmit({ total_venta: totalVenta, detalles });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Total Venta
-        </label>
+        <label className="block font-medium">Total Venta:</label>
         <input
           type="number"
           value={totalVenta}
           onChange={(e) => setTotalVenta(Number(e.target.value))}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className="border rounded px-2 py-1 w-full"
         />
       </div>
       <div>
+        <h3 className="font-semibold">Agregar Detalle</h3>
+        <div className="flex space-x-2">
+          <input
+            type="number"
+            placeholder="Producto ID"
+            value={productoId}
+            onChange={(e) => setProductoId(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+          <input
+            type="number"
+            placeholder="Cantidad"
+            value={cantidad}
+            onChange={(e) => setCantidad(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+          <input
+            type="number"
+            placeholder="Precio"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+          <button
+            type="button"
+            onClick={addDetalle}
+            className="bg-green-500 text-white px-3 py-1 rounded"
+          >
+            Agregar
+          </button>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-semibold">Detalles:</h4>
+        <ul className="list-disc ml-5">
+          {detalles.map((d, i) => (
+            <li key={i}>
+              Producto {d.producto_id} - Cantidad: {d.cantidad} - Precio:{" "}
+              {d.precio}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="flex space-x-2">
         <button
           type="submit"
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
-          Crear Venta
+          {initialData ? "Actualizar Venta" : "Registrar Venta"}
         </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="bg-gray-500 text-white px-4 py-2 rounded"
+          >
+            Cancelar
+          </button>
+        )}
       </div>
     </form>
   );
