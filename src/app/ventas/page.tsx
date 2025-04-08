@@ -9,6 +9,8 @@ import {
   faSpinner,
   faPlus,
   faHistory,
+  faEdit,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface DetalleVenta {
@@ -29,6 +31,7 @@ const VentasPage: React.FC = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingVenta, setEditingVenta] = useState<Venta | null>(null);
 
   useEffect(() => {
     fetchVentas();
@@ -70,7 +73,6 @@ const VentasPage: React.FC = () => {
 
       if (!response.ok) throw new Error("Error al crear venta");
 
-      // Refrescar la lista de ventas después de crear una nueva
       fetchVentas();
     } catch (error) {
       console.error("Error creating venta:", error);
@@ -82,16 +84,75 @@ const VentasPage: React.FC = () => {
     }
   };
 
+  const handleUpdateVenta = async (
+    ventaId: number,
+    updatedVenta: {
+      total_venta: number;
+      detalles: DetalleVenta[];
+    }
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/ventas/${ventaId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedVenta),
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar venta");
+
+      fetchVentas();
+      setEditingVenta(null);
+    } catch (error) {
+      console.error("Error updating venta:", error);
+      setError(
+        error instanceof Error ? error.message : "Error al actualizar venta"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteVenta = async (ventaId: number) => {
+    if (!confirm("¿Estás seguro de eliminar esta venta?")) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/ventas/${ventaId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Error al eliminar venta");
+
+      fetchVentas();
+    } catch (error) {
+      console.error("Error deleting venta:", error);
+      setError(
+        error instanceof Error ? error.message : "Error al eliminar venta"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("es-ES", {
+    return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: "USD",
+      currency: "MXN",
     }).format(isNaN(value) ? 0 : value);
   };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES");
+    return date.toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
 
   return (
@@ -110,10 +171,21 @@ const VentasPage: React.FC = () => {
         {/* Formulario de ventas */}
         <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
           <h2 className="text-xl font-semibold text-[#032059] mb-4 flex items-center">
-            <FontAwesomeIcon icon={faPlus} className="mr-2 text-[#F2B705]" />
-            Registrar Nueva Venta
+            <FontAwesomeIcon
+              icon={editingVenta ? faEdit : faPlus}
+              className="mr-2 text-[#F2B705]"
+            />
+            {editingVenta ? "Editar Venta" : "Registrar Nueva Venta"}
           </h2>
-          <VentaForm onSubmit={handleCreateVenta} />
+          <VentaForm
+            onSubmit={
+              editingVenta
+                ? (venta) => handleUpdateVenta(editingVenta.venta_id, venta)
+                : handleCreateVenta
+            }
+            initialData={editingVenta}
+            onCancel={() => setEditingVenta(null)}
+          />
           {loading && (
             <div className="mt-4 flex items-center justify-center">
               <FontAwesomeIcon
@@ -165,9 +237,23 @@ const VentasPage: React.FC = () => {
                         {formatDate(venta.fecha_venta)}
                       </p>
                     </div>
-                    <span className="font-bold text-[#032059]">
-                      {formatCurrency(venta.total_venta)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#032059]">
+                        {formatCurrency(venta.total_venta)}
+                      </span>
+                      <button
+                        onClick={() => setEditingVenta(venta)}
+                        className="text-[#F2B705] hover:text-[#e0a904]"
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVenta(venta.venta_id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-2">
