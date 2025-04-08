@@ -84,8 +84,9 @@ const VentasPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      // Si usas PUT o PATCH, ajusta aquí
       const response = await fetch(`/api/ventas/${ventaId}`, {
-        method: "PUT", // Usamos PUT para actualizar; ajusta al método que decidas
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedVenta),
       });
@@ -176,6 +177,7 @@ const VentasPage: React.FC = () => {
             }
             onCancel={() => setEditingVenta(null)}
           />
+
           {loading && (
             <div className="mt-4 flex items-center justify-center">
               <FontAwesomeIcon

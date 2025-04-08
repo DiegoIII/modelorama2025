@@ -9,14 +9,21 @@ export async function GET() {
     console.log("Obteniendo todas las ventas...");
     const ventas = await prisma.ventas.findMany({
       include: {
-        detalleVentas: true, // Se incluyen los detalles de venta
+        detalleVentas: {
+          include: {
+            producto: true, // Incluimos la relación para acceder al nombre del producto
+          },
+        },
       },
     });
 
-    // Se mapea cada venta para agregar la propiedad "detalles"
+    // Mapear cada venta para agregar la propiedad "detalles" y extraer el nombre del producto
     const formattedVentas = ventas.map((venta) => ({
       ...venta,
-      detalles: venta.detalleVentas, // Renombramos 'detalleVentas' a 'detalles'
+      detalles: venta.detalleVentas.map((detalle) => ({
+        ...detalle,
+        nombre_producto: detalle.producto?.nombre, // Jala el nombre del producto de la relación
+      })),
     }));
 
     return NextResponse.json(
@@ -51,8 +58,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Transformamos cada detalle para crear el detalle de venta
-    // Se espera que cada detalle incluya "producto_id", "cantidad" y "precio"
+    // Transformamos cada detalle: se espera que cada detalle incluya "producto_id", "cantidad" y "precio".
     interface Detalle {
       producto_id: number;
       cantidad: number;
@@ -62,7 +68,7 @@ export async function POST(req: NextRequest) {
     const detallesTransformed = detalles.map((detalle: Detalle) => ({
       producto_id: detalle.producto_id,
       cantidad: detalle.cantidad,
-      precio_unitario: detalle.precio,
+      precio_unitario: detalle.precio, // Usamos "precio" enviado desde el frontend
       subtotal: detalle.cantidad * detalle.precio,
     }));
 
@@ -72,6 +78,12 @@ export async function POST(req: NextRequest) {
         total_venta,
         detalleVentas: {
           create: detallesTransformed,
+        },
+      },
+      // Opcionalmente, incluir la relación producto en la respuesta
+      include: {
+        detalleVentas: {
+          include: { producto: true },
         },
       },
     });
