@@ -7,14 +7,22 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
   try {
     console.log("Obteniendo todas las ventas...");
-
     const ventas = await prisma.ventas.findMany({
       include: {
         detalleVentas: true, // Incluir detalles de venta
       },
     });
 
-    return NextResponse.json(ventas, { status: 200 });
+    // Mapear cada venta para agregar la propiedad "detalles"
+    const formattedVentas = ventas.map((venta) => ({
+      ...venta,
+      detalles: venta.detalleVentas, // Renombramos 'detalleVentas' a 'detalles'
+    }));
+
+    return NextResponse.json(
+      { success: true, data: formattedVentas },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error en GET /api/ventas:", error);
     return NextResponse.json(
@@ -30,9 +38,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { fecha_venta, total_venta, detalleVentas } = body;
+    // Se espera que el frontend envíe { total_venta, detalles, [fecha_venta] }
+    const { fecha_venta, total_venta, detalles } = body;
 
-    if (!total_venta || !detalleVentas || !Array.isArray(detalleVentas)) {
+    if (!total_venta || !detalles || !Array.isArray(detalles)) {
       return NextResponse.json(
         {
           success: false,
@@ -42,12 +51,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Transformamos cada detalle (se espera que cada detalle incluya "producto_id", "cantidad" y "precio")
+    interface Detalle {
+      producto_id: number;
+      cantidad: number;
+      precio: number;
+    }
+
+    const detallesTransformed = detalles.map((detalle: Detalle) => ({
+      producto_id: detalle.producto_id,
+      cantidad: detalle.cantidad,
+      // Asumimos que el formulario envía la propiedad "precio" para el precio unitario
+      precio_unitario: detalle.precio,
+      subtotal: detalle.cantidad * detalle.precio,
+    }));
+
     const nuevaVenta = await prisma.ventas.create({
       data: {
+        // Si se envía fecha_venta, se convierte a Date; de lo contrario se usa el valor por defecto
         fecha_venta: fecha_venta ? new Date(fecha_venta) : undefined,
         total_venta,
         detalleVentas: {
-          create: detalleVentas,
+          create: detallesTransformed,
         },
       },
     });

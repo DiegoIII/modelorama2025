@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import VentaForm from "app/components/VentaForm";
-import VentasList from "app/components/VentasList";
 import Layout from "app/layout/Layout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -40,9 +39,12 @@ const VentasPage: React.FC = () => {
     setError(null);
     try {
       const response = await fetch("/api/ventas");
-      if (!response.ok) throw new Error("Error al cargar ventas");
-      const data = await response.json();
-      setVentas(data);
+      const res = await response.json();
+      if (res.success) {
+        setVentas(res.data);
+      } else {
+        throw new Error(res.message || "Error al cargar ventas");
+      }
     } catch (error) {
       console.error("Error fetching ventas:", error);
       setError("No se pudieron cargar las ventas");
