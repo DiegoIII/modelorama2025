@@ -125,14 +125,3 @@ model User {
   name       String
   created_at DateTime @default(now())
 }
-
-# Prisma
-DATABASE_URL="mysql://root:password@localhost:3306/modelorama2025"
-SHADOW_DATABASE_URL="mysql://root:password@localhost:3306/modelorama2025_shadow"
-
-# Configuración de conexión
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=password
-MYSQL_DATABASE=modelorama2025
