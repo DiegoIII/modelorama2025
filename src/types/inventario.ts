@@ -1,4 +1,4 @@
-import { Product } from "./product";
+import { product as Product } from "./product";
 
 export interface Inventario {
   id: number; // Identificador único del inventario

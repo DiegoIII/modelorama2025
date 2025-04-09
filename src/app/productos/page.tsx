@@ -19,6 +19,7 @@ import {
   faTruck,
   faCog,
 } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -46,7 +47,6 @@ interface ApiProduct {
   stock_maximo: number;
   categoria: string;
   proveedor: string;
-  // La API no provee imagenUrl ni stock, por lo que asignaremos valores por defecto
 }
 
 const API_URL = "/api/productos";
@@ -82,7 +82,7 @@ const ProductsPage = () => {
             descripcion: p.descripcion,
             precio_compra: Number(p.precio_compra) || 0,
             precio_venta: Number(p.precio_venta) || 0,
-            stock: 0, // Asigna un valor o ajusta según tu lógica de inventario
+            stock: 0,
             stock_minimo: Number(p.stock_minimo) || 0,
             stock_maximo: Number(p.stock_maximo) || 100,
             categoria: p.categoria || "Sin categoría",
@@ -97,23 +97,43 @@ const ProductsPage = () => {
     } catch (error) {
       console.error("Error al obtener productos:", error);
       setError("No se pudieron cargar los productos");
+      toast.error("Error al cargar los productos");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+    if (!window.confirm("¿Estás seguro de eliminar este producto?")) return;
+
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const responseData = await res.json();
+
       if (res.ok) {
+        toast.success(
+          responseData.message || "Producto eliminado correctamente"
+        );
         fetchProducts();
       } else {
-        throw new Error("Error al eliminar el producto");
+        throw new Error(
+          responseData.message || "Error al eliminar el producto"
+        );
       }
     } catch (error) {
       console.error("Error al eliminar producto:", error);
-      setError(error instanceof Error ? error.message : "Error desconocido");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al eliminar";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -164,6 +184,7 @@ const ProductsPage = () => {
             onProductAdded={() => {
               fetchProducts();
               setProductToEdit(undefined);
+              toast.success("Producto guardado correctamente");
             }}
             productToEdit={productToEdit}
           />
@@ -259,12 +280,14 @@ const ProductsPage = () => {
                           <button
                             onClick={() => handleEdit(product)}
                             className="text-[#F2B705] hover:text-[#e0a904]"
+                            aria-label="Editar producto"
                           >
                             <FontAwesomeIcon icon={faEdit} />
                           </button>
                           <button
                             onClick={() => handleDelete(product.id)}
                             className="text-red-600 hover:text-red-800"
+                            aria-label="Eliminar producto"
                           >
                             <FontAwesomeIcon icon={faTrash} />
                           </button>
