@@ -20,6 +20,8 @@ import {
   faSignInAlt,
   faBars,
   faTimes,
+  faChevronDown,
+  faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { useAuthStore } from "app/stores/useAuthStore";
@@ -30,6 +32,9 @@ interface NavLinkProps {
   text: string;
   onClick?: () => void;
   disabled?: boolean;
+  isDropdown?: boolean;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 const NavLink: React.FC<NavLinkProps> = ({
@@ -38,6 +43,9 @@ const NavLink: React.FC<NavLinkProps> = ({
   text,
   onClick,
   disabled,
+  isDropdown = false,
+  isOpen = false,
+  onToggle,
 }) => {
   if (disabled) {
     return (
@@ -45,6 +53,12 @@ const NavLink: React.FC<NavLinkProps> = ({
         <div className="flex items-center px-3 py-2 rounded-lg text-white">
           <FontAwesomeIcon icon={icon} className="mr-2" />
           <span className="hidden sm:inline">{text}</span>
+          {isDropdown && (
+            <FontAwesomeIcon
+              icon={isOpen ? faChevronUp : faChevronDown}
+              className="ml-2 text-xs"
+            />
+          )}
         </div>
       </li>
     );
@@ -54,15 +68,25 @@ const NavLink: React.FC<NavLinkProps> = ({
     <li>
       <Link
         href={href}
-        onClick={onClick}
-        className="flex items-center px-3 py-2 rounded-lg transition-colors
-        text-white hover:bg-[#032059] hover:text-[#F2B705] group"
+        onClick={isDropdown ? onToggle : onClick}
+        className={`flex items-center px-3 py-2 rounded-lg transition-colors
+        text-white hover:bg-[#032059] hover:text-[#F2B705] group ${
+          isDropdown ? "justify-between" : ""
+        }`}
       >
-        <FontAwesomeIcon
-          icon={icon}
-          className="mr-2 group-hover:scale-110 transition-transform"
-        />
-        <span className="hidden sm:inline">{text}</span>
+        <div className="flex items-center">
+          <FontAwesomeIcon
+            icon={icon}
+            className="mr-2 group-hover:scale-110 transition-transform"
+          />
+          <span className="hidden sm:inline">{text}</span>
+        </div>
+        {isDropdown && (
+          <FontAwesomeIcon
+            icon={isOpen ? faChevronUp : faChevronDown}
+            className="ml-2 text-xs transition-transform"
+          />
+        )}
       </Link>
     </li>
   );
@@ -72,29 +96,44 @@ const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, initialize } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
-    // Verificar autenticación al montar el componente
     initialize();
   }, [initialize]);
 
-  const navLinks = [
+  const toggleDropdown = (menu: string) => {
+    setOpenDropdown(openDropdown === menu ? null : menu);
+  };
+
+  const mainLinks = [
     { href: "/", icon: faHome, text: "Inicio", alwaysAvailable: true },
-    { href: "/categoria-gastos", icon: faCoins, text: "Categoría Gastos" },
-    { href: "/categorias", icon: faTags, text: "Categorías" },
-    { href: "/compras", icon: faShoppingCart, text: "Compras" },
-    { href: "/detalle-compras", icon: faReceipt, text: "Detalle Compras" },
-    { href: "/detalle-ventas", icon: faChartLine, text: "Detalle Ventas" },
-    { href: "/gastos", icon: faMoneyBillWave, text: "Gastos" },
-    { href: "/inventario", icon: faBoxes, text: "Inventario" },
+  ];
+
+  const managementLinks = [
     { href: "/productos", icon: faBoxOpen, text: "Productos" },
+    { href: "/inventario", icon: faBoxes, text: "Inventario" },
     { href: "/proveedores", icon: faTruck, text: "Proveedores" },
+  ];
+
+  const transactionLinks = [
     { href: "/ventas", icon: faList, text: "Ventas" },
+    { href: "/compras", icon: faShoppingCart, text: "Compras" },
+  ];
+
+  const financialLinks = [
+    { href: "/gastos", icon: faMoneyBillWave, text: "Gastos" },
+    { href: "/categoria-gastos", icon: faCoins, text: "Categoría Gastos" },
+    { href: "/detalle-ventas", icon: faChartLine, text: "Detalle Ventas" },
+    { href: "/detalle-compras", icon: faReceipt, text: "Detalle Compras" },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setOpenDropdown(null);
+  };
 
   const handleLogout = async () => {
     try {
@@ -123,15 +162,18 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         {/* Logo y botón móvil */}
         <div className="w-full md:w-auto flex justify-between items-center">
-          <div className="text-[#F2B705] text-xl font-bold flex items-center">
+          <Link
+            href="/"
+            className="text-[#F2B705] text-xl font-bold flex items-center hover:text-[#F2B705]/90"
+          >
             <FontAwesomeIcon icon={faBeer} className="mr-2 text-2xl" />
             <span className="text-2xl">Modelorama</span>
-          </div>
+          </Link>
 
           {/* Botón móvil */}
           <button
             onClick={toggleMenu}
-            className="md:hidden text-white focus:outline-none"
+            className="md:hidden text-white focus:outline-none p-2 rounded-lg hover:bg-[#032059]"
             aria-label="Toggle menu"
           >
             <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} size="lg" />
@@ -144,8 +186,8 @@ const Navbar: React.FC = () => {
             isMenuOpen ? "flex" : "hidden"
           } md:flex flex-col md:flex-row items-center w-full md:w-auto mt-4 md:mt-0`}
         >
-          <ul className="flex flex-col md:flex-row flex-wrap justify-center gap-2 md:gap-4 w-full md:w-auto">
-            {navLinks.map((link) => (
+          <ul className="flex flex-col md:flex-row flex-wrap justify-center gap-1 md:gap-2 w-full md:w-auto">
+            {mainLinks.map((link) => (
               <NavLink
                 key={link.href}
                 href={link.href}
@@ -155,6 +197,101 @@ const Navbar: React.FC = () => {
                 disabled={!link.alwaysAvailable && !isAuthenticated}
               />
             ))}
+
+            {/* Menú desplegable para Gestión */}
+            <li className="relative group">
+              <div
+                className="flex items-center px-3 py-2 rounded-lg transition-colors text-white hover:bg-[#032059] hover:text-[#F2B705] cursor-pointer"
+                onClick={() => toggleDropdown("management")}
+              >
+                <FontAwesomeIcon icon={faBoxes} className="mr-2" />
+                <span className="hidden sm:inline">Gestión</span>
+                <FontAwesomeIcon
+                  icon={
+                    openDropdown === "management" ? faChevronUp : faChevronDown
+                  }
+                  className="ml-2 text-xs"
+                />
+              </div>
+              {openDropdown === "management" && (
+                <ul className="md:absolute left-0 mt-1 w-full md:w-48 bg-[#031D40] rounded-lg shadow-lg z-10 border border-[#032059]">
+                  {managementLinks.map((link) => (
+                    <NavLink
+                      key={link.href}
+                      href={link.href}
+                      icon={link.icon}
+                      text={link.text}
+                      onClick={closeMenu}
+                      disabled={!isAuthenticated}
+                    />
+                  ))}
+                </ul>
+              )}
+            </li>
+
+            {/* Menú desplegable para Transacciones */}
+            <li className="relative group">
+              <div
+                className="flex items-center px-3 py-2 rounded-lg transition-colors text-white hover:bg-[#032059] hover:text-[#F2B705] cursor-pointer"
+                onClick={() => toggleDropdown("transactions")}
+              >
+                <FontAwesomeIcon icon={faShoppingCart} className="mr-2" />
+                <span className="hidden sm:inline">Transacciones</span>
+                <FontAwesomeIcon
+                  icon={
+                    openDropdown === "transactions"
+                      ? faChevronUp
+                      : faChevronDown
+                  }
+                  className="ml-2 text-xs"
+                />
+              </div>
+              {openDropdown === "transactions" && (
+                <ul className="md:absolute left-0 mt-1 w-full md:w-48 bg-[#031D40] rounded-lg shadow-lg z-10 border border-[#032059]">
+                  {transactionLinks.map((link) => (
+                    <NavLink
+                      key={link.href}
+                      href={link.href}
+                      icon={link.icon}
+                      text={link.text}
+                      onClick={closeMenu}
+                      disabled={!isAuthenticated}
+                    />
+                  ))}
+                </ul>
+              )}
+            </li>
+
+            {/* Menú desplegable para Finanzas */}
+            <li className="relative group">
+              <div
+                className="flex items-center px-3 py-2 rounded-lg transition-colors text-white hover:bg-[#032059] hover:text-[#F2B705] cursor-pointer"
+                onClick={() => toggleDropdown("financial")}
+              >
+                <FontAwesomeIcon icon={faMoneyBillWave} className="mr-2" />
+                <span className="hidden sm:inline">Finanzas</span>
+                <FontAwesomeIcon
+                  icon={
+                    openDropdown === "financial" ? faChevronUp : faChevronDown
+                  }
+                  className="ml-2 text-xs"
+                />
+              </div>
+              {openDropdown === "financial" && (
+                <ul className="md:absolute left-0 mt-1 w-full md:w-48 bg-[#031D40] rounded-lg shadow-lg z-10 border border-[#032059]">
+                  {financialLinks.map((link) => (
+                    <NavLink
+                      key={link.href}
+                      href={link.href}
+                      icon={link.icon}
+                      text={link.text}
+                      onClick={closeMenu}
+                      disabled={!isAuthenticated}
+                    />
+                  ))}
+                </ul>
+              )}
+            </li>
           </ul>
 
           {/* Área de usuario */}
@@ -163,13 +300,17 @@ const Navbar: React.FC = () => {
               <>
                 {user && (
                   <div className="flex items-center text-white">
-                    <FontAwesomeIcon icon={faUser} className="mr-2" />
-                    <span className="text-sm">{user.email}</span>
+                    <div className="w-8 h-8 rounded-full bg-[#F2B705] flex items-center justify-center text-[#031D40] font-bold mr-2">
+                      {user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm hidden md:inline">
+                      {user.email}
+                    </span>
                   </div>
                 )}
                 <button
                   onClick={handleLogout}
-                  className="flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors shadow-md"
+                  className="flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors shadow-md w-full md:w-auto justify-center"
                 >
                   <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
                   <span>Cerrar sesión</span>
@@ -179,7 +320,7 @@ const Navbar: React.FC = () => {
               <Link
                 href="/login"
                 onClick={closeMenu}
-                className="flex items-center bg-[#F2B705] hover:bg-[#e0a904] text-[#031D40] font-semibold px-4 py-2 rounded-md transition-colors shadow-md"
+                className="flex items-center bg-[#F2B705] hover:bg-[#e0a904] text-[#031D40] font-semibold px-4 py-2 rounded-lg transition-colors shadow-md w-full md:w-auto justify-center"
               >
                 <FontAwesomeIcon icon={faSignInAlt} className="mr-2" />
                 <span>Iniciar sesión</span>
