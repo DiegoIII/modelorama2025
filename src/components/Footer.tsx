@@ -10,7 +10,7 @@ import {
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#032059] text-white py-8 mt-auto">
+    <footer className="bg-[#031D40] text-white py-8 mt-auto">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row justify-between items-center">
           {/* Sección izquierda - Logo y derechos */}
@@ -53,7 +53,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* División y créditos */}
-        <div className="mt-8 pt-6 border-t border-[#031D40]">
+        <div className="mt-8 pt-6 border-t border-[#032059]">
           <p className="text-sm text-gray-400 text-center">
             Desarrollado por{" "}
             <a href="#" className="text-[#F2B705] hover:underline">

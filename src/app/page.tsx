@@ -1,5 +1,7 @@
+"use client";
+
 import Navbar from "app/components/Navbar";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "app/layout/Layout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,6 +15,41 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const PageLayout = () => {
+  // Lista de posibles consejos
+  const consejos = [
+    "Actualice stock mínimo/máximo para evitar faltantes",
+    "Revise reportes de ventas semanalmente para identificar tendencias",
+    "Mantenga precios actualizados según costos y competencia",
+    "Realice inventarios físicos periódicos para verificar exactitud",
+    "Capacite a su equipo en el uso del sistema para mayor eficiencia",
+    "Establezca metas de ventas y monitoree su progreso",
+    "Analice los productos más y menos vendidos para optimizar inventario",
+    "Negocie mejores condiciones con proveedores frecuentes",
+    "Categorice sus gastos para un mejor control financiero",
+    "Utilice promociones para mover productos de lenta rotación",
+    "Mantenga actualizada la información de sus clientes",
+    "Revise regularmente los vencimientos de productos perecederos",
+    "Establezca un sistema de recompensas para empleados destacados",
+    "Automatice procesos repetitivos para ahorrar tiempo",
+    "Realice copias de seguridad de su información regularmente",
+  ];
+
+  // Estado para almacenar los consejos seleccionados
+  const [consejosMostrados, setConsejosMostrados] = useState<string[]>([]);
+
+  // Función para seleccionar consejos aleatorios
+  const seleccionarConsejosAleatorios = () => {
+    // Mezclar el array de consejos
+    const consejosMezclados = [...consejos].sort(() => 0.5 - Math.random());
+    // Seleccionar los primeros 3
+    setConsejosMostrados(consejosMezclados.slice(0, 3));
+  };
+
+  // Ejecutar al montar el componente
+  useEffect(() => {
+    seleccionarConsejosAleatorios();
+  }, []);
+
   return (
     <Layout>
       <section className="container mx-auto py-8 px-4">
@@ -128,9 +165,9 @@ const PageLayout = () => {
             <h2 className="text-xl font-semibold text-[#032059]">Consejos</h2>
           </div>
           <ul className="space-y-2 text-[#031D40]">
-            <li>• Actualice stock mínimo/máximo</li>
-            <li>• Revise reportes de ventas</li>
-            <li>• Mantenga precios actualizados</li>
+            {consejosMostrados.map((consejo, index) => (
+              <li key={index}>• {consejo}</li>
+            ))}
           </ul>
         </div>
       </section>
