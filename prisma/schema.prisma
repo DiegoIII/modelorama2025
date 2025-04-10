@@ -17,6 +17,7 @@ model Productos {
   proveedor_id   Int
   stock_minimo   Int
   stock_maximo   Int
+  imagenUrl      String?
   created_at     DateTime         @default(now())
   detalleCompras DetalleCompras[]
   detalleVentas  DetalleVentas[]

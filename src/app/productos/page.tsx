@@ -90,7 +90,10 @@ const ProductsPage = () => {
             stock_minimo: Number(p.stock_minimo) || 0,
             stock_maximo: Number(p.stock_maximo) || 100,
             categoria: p.categoria || "Sin categoría",
-            imagenUrl: p.imagenUrl || "/placeholder-product.png",
+            imagenUrl:
+              p.imagenUrl && p.imagenUrl.trim() !== ""
+                ? p.imagenUrl
+                : "/No_Image_Available.jpg",
             proveedor: p.proveedor || "Sin proveedor",
             estado: "activo",
           }))

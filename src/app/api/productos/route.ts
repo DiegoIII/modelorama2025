@@ -7,21 +7,17 @@ export async function GET() {
       include: {
         categoria: {
           select: {
-            // Se asume que el campo correcto es 'nombre_categoria'
             nombre_categoria: true,
           },
         },
         proveedor: {
           select: {
-            // Se asume que el campo correcto es 'nombre_proveedor'
             nombre_proveedor: true,
           },
         },
       },
     });
 
-    // Mapear productos para formatear la respuesta.
-    // Agregamos valores por defecto para imagenUrl y estado.
     const formattedProducts = productos.map((producto) => ({
       producto_id: producto.producto_id,
       nombre: producto.nombre,
@@ -33,10 +29,12 @@ export async function GET() {
       stock_minimo: producto.stock_minimo,
       stock_maximo: producto.stock_maximo,
       created_at: producto.created_at,
-      // Propiedades derivadas:
       categoria: producto.categoria?.nombre_categoria || "Sin categoría",
       proveedor: producto.proveedor?.nombre_proveedor || "Sin proveedor",
-      imagenUrl: "/placeholder.png",
+
+      // 👇 Aquí usamos el valor real o un fallback
+      imagenUrl: producto.imagenUrl?.trim() || "/No_Image_Available.jpg",
+
       estado: "activo",
     }));
 
@@ -62,7 +60,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("Datos recibidos:", body);
 
-    // Buscar categoría por nombre
     const categoria = await prisma.categorias.findFirst({
       where: { nombre_categoria: body.categoria },
       select: { categoria_id: true },
@@ -78,7 +75,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Buscar proveedor por nombre
     const proveedor = await prisma.proveedores.findFirst({
       where: { nombre_proveedor: body.proveedor },
     });
@@ -93,7 +89,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validación de campos obligatorios
     const requiredFields = ["nombre", "precio_compra", "precio_venta"];
     const missingFields = requiredFields.filter((field) => !(field in body));
 
@@ -108,7 +103,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Crear producto
     const nuevoProducto = await prisma.productos.create({
       data: {
         nombre: body.nombre,
@@ -119,6 +113,10 @@ export async function POST(req: NextRequest) {
         proveedor_id: proveedor.proveedor_id,
         stock_minimo: parseInt(body.stock_minimo) || 0,
         stock_maximo: parseInt(body.stock_maximo) || 100,
+        imagenUrl:
+          body.imagenUrl && body.imagenUrl.trim() !== ""
+            ? body.imagenUrl
+            : "/No_Image_Available.jpg", // 👈 usa imagen por defecto
         created_at: new Date(),
       },
       include: {

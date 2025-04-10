@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface Product {
   id?: string;
@@ -104,12 +105,15 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
       const response = await fetch(
         productToEdit ? `/api/productos/${productToEdit.id}` : "/api/productos",
         {
-          method: productToEdit ? "PUT" : "POST",
+          method: productToEdit ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...formData,
             ...numericFields,
-            imagenUrl: formData.imagenUrl || "/placeholder.png",
+            imagenUrl:
+              formData.imagenUrl.trim() !== ""
+                ? formData.imagenUrl
+                : "/placeholder.png",
           }),
         }
       );
@@ -140,7 +144,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Campo: Nombre */}
+        {/* Nombre */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Nombre <span className="text-red-500">*</span>
@@ -151,11 +155,11 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.nombre}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
 
-        {/* Campo: Descripción */}
+        {/* Descripción */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Descripción
@@ -165,51 +169,45 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             type="text"
             value={formData.descripcion}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
 
-        {/* Campo: Precio Compra */}
+        {/* Precio compra */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Precio Compra <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <span className="absolute left-3 top-2 text-[#032059]">$</span>
-            <input
-              name="precio_compra"
-              type="number"
-              value={formData.precio_compra}
-              onChange={handleChange}
-              required
-              className="w-full pl-8 pr-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
-              step="0.01"
-              min="0"
-            />
-          </div>
+          <input
+            name="precio_compra"
+            type="number"
+            value={formData.precio_compra}
+            onChange={handleChange}
+            required
+            min="0"
+            step="0.01"
+            className="w-full px-4 py-2 border rounded-lg"
+          />
         </div>
 
-        {/* Campo: Precio Venta */}
+        {/* Precio venta */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Precio Venta <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <span className="absolute left-3 top-2 text-[#032059]">$</span>
-            <input
-              name="precio_venta"
-              type="number"
-              value={formData.precio_venta}
-              onChange={handleChange}
-              required
-              className="w-full pl-8 pr-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
-              step="0.01"
-              min="0"
-            />
-          </div>
+          <input
+            name="precio_venta"
+            type="number"
+            value={formData.precio_venta}
+            onChange={handleChange}
+            required
+            min="0"
+            step="0.01"
+            className="w-full px-4 py-2 border rounded-lg"
+          />
         </div>
 
-        {/* Campo: Stock Mínimo */}
+        {/* Stock mínimo */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Stock Mínimo <span className="text-red-500">*</span>
@@ -220,12 +218,12 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.stock_minimo}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
             min="0"
+            className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
 
-        {/* Campo: Stock Máximo */}
+        {/* Stock máximo */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Stock Máximo <span className="text-red-500">*</span>
@@ -236,12 +234,12 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.stock_maximo}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
             min="0"
+            className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
 
-        {/* Campo: Categoría */}
+        {/* Categoría */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Categoría <span className="text-red-500">*</span>
@@ -251,7 +249,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.categoria}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            className="w-full px-4 py-2 border rounded-lg"
           >
             <option value="">Seleccione una categoría</option>
             {categorias.map((cat) => (
@@ -262,7 +260,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
           </select>
         </div>
 
-        {/* Campo: Proveedor */}
+        {/* Proveedor */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Proveedor <span className="text-red-500">*</span>
@@ -272,7 +270,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.proveedor}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            className="w-full px-4 py-2 border rounded-lg"
           >
             <option value="">Seleccione un proveedor</option>
             {proveedores.map((prov) => (
@@ -283,7 +281,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
           </select>
         </div>
 
-        {/* Campo: Imagen URL */}
+        {/* Imagen URL + preview */}
         <div className="md:col-span-2 space-y-1">
           <label className="block text-sm font-medium text-[#031D40]">
             Imagen URL
@@ -294,19 +292,23 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.imagenUrl}
             onChange={handleChange}
             placeholder="https://ejemplo.com/imagen.jpg"
-            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            className="w-full px-4 py-2 border rounded-lg"
           />
           {formData.imagenUrl && (
             <div className="mt-2">
               <p className="text-xs text-[#031D40]/70 mb-1">Vista previa:</p>
-              <img
-                src={formData.imagenUrl}
-                alt="Vista previa"
-                className="h-20 object-contain border border-[#031D40]/20 rounded"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/placeholder.png";
-                }}
-              />
+              <div className="relative w-32 h-20 border rounded overflow-hidden">
+                <Image
+                  src={formData.imagenUrl}
+                  alt="Vista previa"
+                  fill
+                  className="object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.png";
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>

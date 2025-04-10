@@ -1,13 +1,6 @@
 import prisma from "app/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-interface ApiResponse {
-  success: boolean;
-  data?: any;
-  message?: string;
-  error?: string;
-}
-
 /**
  * Obtener un producto específico (GET)
  */
@@ -57,13 +50,14 @@ export async function GET(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error en GET /api/productos/[id]:", error.message);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Error en GET /api/productos/[id]:", err.message);
     return NextResponse.json(
       {
         success: false,
         message: "Error al obtener el producto",
-        error: error.message,
+        error: err.message,
       },
       { status: 500 }
     );
@@ -88,7 +82,6 @@ export async function PATCH(
       );
     }
 
-    // Validaciones básicas
     if (!body.nombre || !body.precio_venta) {
       return NextResponse.json(
         {
@@ -141,6 +134,10 @@ export async function PATCH(
         stock_maximo: body.stock_maximo
           ? parseInt(body.stock_maximo)
           : undefined,
+        imagenUrl:
+          body.imagenUrl && body.imagenUrl.trim() !== ""
+            ? body.imagenUrl
+            : "/No_Image_Available.jpg",
       },
       include: {
         categoria: {
@@ -164,10 +161,11 @@ export async function PATCH(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error en PATCH /api/productos/[id]:", error.message);
+  } catch (error: unknown) {
+    const err = error as { message: string; code?: string };
+    console.error("Error en PATCH /api/productos/[id]:", err.message);
 
-    if (error.code === "P2002") {
+    if (err.code === "P2002") {
       return NextResponse.json(
         {
           success: false,
@@ -177,7 +175,7 @@ export async function PATCH(
       );
     }
 
-    if (error.code === "P2003") {
+    if (err.code === "P2003") {
       return NextResponse.json(
         {
           success: false,
@@ -191,7 +189,7 @@ export async function PATCH(
       {
         success: false,
         message: "Error al actualizar el producto",
-        error: error.message,
+        error: err.message,
       },
       { status: 500 }
     );
@@ -215,7 +213,6 @@ export async function DELETE(
       );
     }
 
-    // Verificar si hay registros de inventario asociados
     const inventarioAsociado = await prisma.inventario.findFirst({
       where: { producto_id: productoId },
     });
@@ -231,7 +228,6 @@ export async function DELETE(
       );
     }
 
-    // Verificar si hay detalles de venta asociados
     const ventasAsociadas = await prisma.detalleVentas.findFirst({
       where: { producto_id: productoId },
     });
@@ -257,10 +253,11 @@ export async function DELETE(
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error en DELETE /api/productos/[id]:", error.message);
+  } catch (error: unknown) {
+    const err = error as { message: string; code?: string };
+    console.error("Error en DELETE /api/productos/[id]:", err.message);
 
-    if (error.code === "P2025") {
+    if (err.code === "P2025") {
       return NextResponse.json(
         { success: false, message: "Producto no encontrado" },
         { status: 404 }
@@ -271,7 +268,7 @@ export async function DELETE(
       {
         success: false,
         message: "Error al eliminar el producto",
-        error: error.message,
+        error: err.message,
       },
       { status: 500 }
     );

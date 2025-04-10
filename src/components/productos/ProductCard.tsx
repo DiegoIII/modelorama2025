@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DeleteProductModal from "./DeleteProductModal";
+import Image from "next/image";
 
 interface Product {
   producto_id: number;
@@ -42,7 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onDelete }) => {
 
   return (
     <div className="border rounded-lg p-4 shadow-md bg-white dark:bg-gray-800">
-      <img
+      <Image
         src={product.imagenUrl || "/placeholder.png"}
         alt={product.nombre}
         className="w-full h-40 object-cover rounded-md"
