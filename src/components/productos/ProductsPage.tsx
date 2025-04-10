@@ -1,4 +1,3 @@
-// src/app/productos/page.tsx
 import { useEffect, useState } from "react";
 
 type Producto = {

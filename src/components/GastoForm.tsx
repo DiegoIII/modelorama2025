@@ -53,46 +53,52 @@ const GastoForm: React.FC<GastoFormProps> = ({ onSubmit, loading }) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
-        <div className="p-2 bg-red-100 text-red-700 rounded">{error}</div>
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          {error}
+        </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[#031D40]">
           Descripción
         </label>
         <input
           {...register("descripcion", { required: true })}
           type="text"
-          className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-4 py-2 border border-[#031D40]/30 rounded-lg shadow-sm focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Monto</label>
+        <label className="block text-sm font-medium text-[#031D40]">
+          Monto
+        </label>
         <input
           {...register("monto", { required: true, valueAsNumber: true })}
           type="number"
           step="0.01"
-          className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-4 py-2 border border-[#031D40]/30 rounded-lg shadow-sm focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Fecha</label>
+        <label className="block text-sm font-medium text-[#031D40]">
+          Fecha
+        </label>
         <input
           {...register("fecha", { required: true })}
           type="date"
-          className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-4 py-2 border border-[#031D40]/30 rounded-lg shadow-sm focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[#031D40]">
           Categoría
         </label>
         <select
           {...register("categoria_gasto_id", { required: true })}
-          className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-4 py-2 border border-[#031D40]/30 rounded-lg shadow-sm focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
         >
           <option value="">Seleccione una categoría</option>
           {Array.isArray(categorias) &&
@@ -110,11 +116,37 @@ const GastoForm: React.FC<GastoFormProps> = ({ onSubmit, loading }) => {
       <button
         type="submit"
         disabled={loading}
-        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-          loading ? "opacity-50 cursor-not-allowed" : ""
+        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#032059] hover:bg-[#031D40] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F2B705] transition-colors duration-200 ${
+          loading ? "opacity-70 cursor-not-allowed" : ""
         }`}
       >
-        {loading ? "Procesando..." : "Guardar Gasto"}
+        {loading ? (
+          <span className="flex items-center">
+            <svg
+              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Procesando...
+          </span>
+        ) : (
+          "Guardar Gasto"
+        )}
       </button>
     </form>
   );

@@ -39,7 +39,6 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
   const [proveedores, setProveedores] = useState<string[]>([]);
 
   useEffect(() => {
-    // Si se está editando un producto, carga sus datos
     if (productToEdit) {
       const { ...rest } = productToEdit;
       setFormData(
@@ -57,19 +56,21 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
   }, [productToEdit]);
 
   useEffect(() => {
-    // Obtener categorías y proveedores desde la BD
     const fetchRelacionales = async () => {
       try {
-        const resCat = await fetch("/api/categorias");
-        const dataCat = await resCat.json();
-        // Se espera que dataCat sea un arreglo de objetos con { nombre_categoria }
+        const [resCat, resProv] = await Promise.all([
+          fetch("/api/categorias"),
+          fetch("/api/proveedores"),
+        ]);
+
+        const [dataCat, dataProv] = await Promise.all([
+          resCat.json(),
+          resProv.json(),
+        ]);
+
         setCategorias(
           dataCat.map((c: { nombre_categoria: string }) => c.nombre_categoria)
         );
-
-        const resProv = await fetch("/api/proveedores");
-        const dataProv = await resProv.json();
-        // Se espera que dataProv sea un arreglo de objetos con { nombre_proveedor }
         setProveedores(
           dataProv.map((p: { nombre_proveedor: string }) => p.nombre_proveedor)
         );
@@ -126,18 +127,22 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg shadow-md mb-6"
+      className="bg-white p-6 rounded-xl shadow-lg border border-[#031D40]/20"
     >
-      <h2 className="text-xl font-semibold mb-6">
-        {productToEdit ? "Editar Producto" : "Agregar Producto"}
+      <h2 className="text-2xl font-bold text-[#032059] mb-6 border-b pb-2 border-[#F2B705]/50">
+        {productToEdit ? "Editar Producto" : "Agregar Nuevo Producto"}
       </h2>
 
-      {error && <div className="mb-4 p-3 bg-red-100 text-red-700">{error}</div>}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Campo: Nombre */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Nombre <span className="text-red-500">*</span>
           </label>
           <input
@@ -146,57 +151,67 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.nombre}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
           />
         </div>
 
         {/* Campo: Descripción */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Descripción</label>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
+            Descripción
+          </label>
           <input
             name="descripcion"
             type="text"
             value={formData.descripcion}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
           />
         </div>
 
         {/* Campo: Precio Compra */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Precio Compra <span className="text-red-500">*</span>
           </label>
-          <input
-            name="precio_compra"
-            type="number"
-            value={formData.precio_compra}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            step="0.01"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2 text-[#032059]">$</span>
+            <input
+              name="precio_compra"
+              type="number"
+              value={formData.precio_compra}
+              onChange={handleChange}
+              required
+              className="w-full pl-8 pr-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+              step="0.01"
+              min="0"
+            />
+          </div>
         </div>
 
         {/* Campo: Precio Venta */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Precio Venta <span className="text-red-500">*</span>
           </label>
-          <input
-            name="precio_venta"
-            type="number"
-            value={formData.precio_venta}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            step="0.01"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2 text-[#032059]">$</span>
+            <input
+              name="precio_venta"
+              type="number"
+              value={formData.precio_venta}
+              onChange={handleChange}
+              required
+              className="w-full pl-8 pr-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+              step="0.01"
+              min="0"
+            />
+          </div>
         </div>
 
         {/* Campo: Stock Mínimo */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Stock Mínimo <span className="text-red-500">*</span>
           </label>
           <input
@@ -205,13 +220,14 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.stock_minimo}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            min="0"
           />
         </div>
 
         {/* Campo: Stock Máximo */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Stock Máximo <span className="text-red-500">*</span>
           </label>
           <input
@@ -220,13 +236,14 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.stock_maximo}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
+            min="0"
           />
         </div>
 
-        {/* Campo: Categoría (select relacional) */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        {/* Campo: Categoría */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Categoría <span className="text-red-500">*</span>
           </label>
           <select
@@ -234,7 +251,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.categoria}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
           >
             <option value="">Seleccione una categoría</option>
             {categorias.map((cat) => (
@@ -245,9 +262,9 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
           </select>
         </div>
 
-        {/* Campo: Proveedor (select relacional) */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        {/* Campo: Proveedor */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
             Proveedor <span className="text-red-500">*</span>
           </label>
           <select
@@ -255,7 +272,7 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
             value={formData.proveedor}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
           >
             <option value="">Seleccione un proveedor</option>
             {proveedores.map((prov) => (
@@ -267,31 +284,86 @@ const ProductForm = ({ onProductAdded, productToEdit }: ProductFormProps) => {
         </div>
 
         {/* Campo: Imagen URL */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Imagen URL</label>
+        <div className="md:col-span-2 space-y-1">
+          <label className="block text-sm font-medium text-[#031D40]">
+            Imagen URL
+          </label>
           <input
             name="imagenUrl"
             type="text"
             value={formData.imagenUrl}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
+            placeholder="https://ejemplo.com/imagen.jpg"
+            className="w-full px-4 py-2 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059] text-[#032059]"
           />
+          {formData.imagenUrl && (
+            <div className="mt-2">
+              <p className="text-xs text-[#031D40]/70 mb-1">Vista previa:</p>
+              <img
+                src={formData.imagenUrl}
+                alt="Vista previa"
+                className="h-20 object-contain border border-[#031D40]/20 rounded"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.png";
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className={`w-full py-2 px-4 rounded-md text-white ${
-          productToEdit ? "bg-yellow-600" : "bg-blue-600"
-        } ${isSubmitting ? "opacity-50" : ""}`}
-      >
-        {isSubmitting
-          ? "Procesando..."
-          : productToEdit
-          ? "Actualizar"
-          : "Agregar"}
-      </button>
+      <div className="mt-8 flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={() =>
+            productToEdit ? onProductAdded() : setFormData(initialForm)
+          }
+          className="px-4 py-2 border border-[#032059] text-[#032059] rounded-lg hover:bg-[#032059]/10 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={`px-6 py-2 rounded-lg text-white font-medium ${
+            productToEdit
+              ? "bg-[#F2B705] hover:bg-[#F2B705]/90 text-[#032059]"
+              : "bg-[#032059] hover:bg-[#031D40]"
+          } ${
+            isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+          } transition-colors flex items-center justify-center min-w-[120px]`}
+        >
+          {isSubmitting ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              {productToEdit ? "Actualizando..." : "Agregando..."}
+            </>
+          ) : productToEdit ? (
+            "Actualizar Producto"
+          ) : (
+            "Agregar Producto"
+          )}
+        </button>
+      </div>
     </form>
   );
 };

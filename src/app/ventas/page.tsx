@@ -11,6 +11,7 @@ import {
   faHistory,
   faEdit,
   faTrash,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface DetalleVenta {
@@ -32,6 +33,8 @@ const VentasPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingVenta, setEditingVenta] = useState<Venta | null>(null);
+  const [ventaToDelete, setVentaToDelete] = useState<Venta | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchVentas();
@@ -84,7 +87,6 @@ const VentasPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Si usas PUT o PATCH, ajusta aquí
       const response = await fetch(`/api/ventas/${ventaId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -103,12 +105,20 @@ const VentasPage: React.FC = () => {
     }
   };
 
-  const handleDeleteVenta = async (ventaId: number) => {
-    if (!confirm("¿Estás seguro de eliminar esta venta?")) return;
-    setLoading(true);
-    setError(null);
+  const confirmDeleteVenta = (venta: Venta) => {
+    setVentaToDelete(venta);
+  };
+
+  const cancelDeleteVenta = () => {
+    setVentaToDelete(null);
+  };
+
+  const handleDeleteVenta = async () => {
+    if (!ventaToDelete) return;
+
+    setIsDeleting(true);
     try {
-      const response = await fetch(`/api/ventas/${ventaId}`, {
+      const response = await fetch(`/api/ventas/${ventaToDelete.venta_id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Error al eliminar venta");
@@ -119,7 +129,8 @@ const VentasPage: React.FC = () => {
         error instanceof Error ? error.message : "Error al eliminar venta"
       );
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
+      setVentaToDelete(null);
     }
   };
 
@@ -142,6 +153,66 @@ const VentasPage: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* Modal de confirmación para eliminar */}
+        {ventaToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-[#032059]">
+                    Confirmar eliminación
+                  </h3>
+                  <button
+                    onClick={cancelDeleteVenta}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
+                <p className="mb-4 text-[#031D40]">
+                  ¿Estás seguro de eliminar la venta{" "}
+                  <strong>#{ventaToDelete.venta_id}</strong> del{" "}
+                  {formatDate(ventaToDelete.fecha_venta)} por un total de{" "}
+                  {formatCurrency(ventaToDelete.total_venta)}?
+                </p>
+                <p className="mb-6 text-sm text-red-600">
+                  Esta acción eliminará {ventaToDelete.detalles.length}{" "}
+                  producto(s) asociado(s) y no se puede deshacer.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={cancelDeleteVenta}
+                    className="px-4 py-2 border border-[#032059] text-[#032059] rounded-lg hover:bg-[#032059]/10 transition-colors"
+                    disabled={isDeleting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDeleteVenta}
+                    className={`px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ${
+                      isDeleting ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          spin
+                          className="mr-2"
+                        />
+                        Eliminando...
+                      </>
+                    ) : (
+                      "Eliminar definitivamente"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center mb-8">
           <FontAwesomeIcon
             icon={faCashRegister}
@@ -153,7 +224,7 @@ const VentasPage: React.FC = () => {
         </div>
 
         {/* Formulario de ventas */}
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-[#031D40]/20 mb-8">
           <h2 className="text-xl font-semibold text-[#032059] mb-4 flex items-center">
             <FontAwesomeIcon
               icon={editingVenta ? faEdit : faPlus}
@@ -179,26 +250,22 @@ const VentasPage: React.FC = () => {
           />
 
           {loading && (
-            <div className="mt-4 flex items-center justify-center">
-              <FontAwesomeIcon
-                icon={faSpinner}
-                spin
-                className="text-[#032059] mr-2"
-              />
+            <div className="mt-4 flex items-center justify-center text-[#032059]">
+              <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
               <span>Procesando venta...</span>
             </div>
           )}
           {error && (
-            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
               {error}
             </div>
           )}
         </div>
 
         {/* Listado de ventas */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 bg-[#031D40] text-white flex items-center">
-            <FontAwesomeIcon icon={faHistory} className="mr-2" />
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-[#031D40]/20">
+          <div className="p-4 bg-[#032059] text-white flex items-center">
+            <FontAwesomeIcon icon={faHistory} className="mr-2 text-[#F2B705]" />
             <h2 className="text-xl font-semibold">Historial de Ventas</h2>
           </div>
 
@@ -209,7 +276,7 @@ const VentasPage: React.FC = () => {
                 spin
                 className="text-4xl text-[#032059] mb-4"
               />
-              <p className="text-lg text-[#032059]">Cargando ventas...</p>
+              <p className="text-lg text-[#031D40]">Cargando ventas...</p>
             </div>
           ) : error ? (
             <div className="p-4 text-center text-red-600">{error}</div>
@@ -225,7 +292,7 @@ const VentasPage: React.FC = () => {
                       <h3 className="font-medium text-[#032059]">
                         Venta #{venta.venta_id}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-[#031D40]/80">
                         {formatDate(venta.fecha_venta)}
                       </p>
                     </div>
@@ -235,26 +302,28 @@ const VentasPage: React.FC = () => {
                       </span>
                       <button
                         onClick={() => setEditingVenta(venta)}
-                        className="text-[#F2B705] hover:text-[#e0a904]"
+                        className="text-[#F2B705] hover:text-[#e0a904] transition-colors"
+                        aria-label="Editar venta"
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
-                        onClick={() => handleDeleteVenta(venta.venta_id)}
-                        className="text-red-600 hover:text-red-800"
+                        onClick={() => confirmDeleteVenta(venta)}
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                        aria-label="Eliminar venta"
                       >
                         <FontAwesomeIcon icon={faTrash} />
                       </button>
                     </div>
                   </div>
 
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <h4 className="text-sm font-medium text-[#031D40] mb-1">
                       Productos vendidos:
                     </h4>
                     <ul className="space-y-1">
                       {venta.detalles.map((detalle, index) => (
-                        <li key={index} className="text-sm text-gray-700">
+                        <li key={index} className="text-sm text-[#031D40]">
                           •{" "}
                           {detalle.nombre_producto ||
                             `Producto ${detalle.producto_id}`}{" "}
@@ -269,7 +338,7 @@ const VentasPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-[#031D40]/70">
               No hay ventas registradas
             </div>
           )}

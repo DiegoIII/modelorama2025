@@ -18,6 +18,7 @@ import {
   faList,
   faTruck,
   faCog,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 
@@ -47,6 +48,7 @@ interface ApiProduct {
   stock_maximo: number;
   categoria: string;
   proveedor: string;
+  imagenUrl: string;
 }
 
 const API_URL = "/api/productos";
@@ -58,6 +60,8 @@ const ProductsPage = () => {
   const [productToEdit, setProductToEdit] = useState<Product | undefined>(
     undefined
   );
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -86,7 +90,7 @@ const ProductsPage = () => {
             stock_minimo: Number(p.stock_minimo) || 0,
             stock_maximo: Number(p.stock_maximo) || 100,
             categoria: p.categoria || "Sin categoría",
-            imagenUrl: "/placeholder.png",
+            imagenUrl: p.imagenUrl || "/placeholder-product.png",
             proveedor: p.proveedor || "Sin proveedor",
             estado: "activo",
           }))
@@ -103,11 +107,20 @@ const ProductsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Estás seguro de eliminar este producto?")) return;
+  const handleDeleteConfirm = (product: Product) => {
+    setProductToDelete(product);
+  };
 
+  const handleDeleteCancel = () => {
+    setProductToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+
+    setIsDeleting(true);
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await fetch(`${API_URL}/${productToDelete.id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -134,6 +147,9 @@ const ProductsPage = () => {
           : "Error desconocido al eliminar";
       setError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setProductToDelete(null);
     }
   };
 
@@ -165,6 +181,80 @@ const ProductsPage = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* Modal de confirmación para eliminar */}
+        {productToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-[#032059]">
+                    Confirmar eliminación
+                  </h3>
+                  <button
+                    onClick={handleDeleteCancel}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
+                <div className="flex items-center mb-4">
+                  <div className="relative w-16 h-16 mr-4">
+                    <Image
+                      src={productToDelete.imagenUrl}
+                      alt={productToDelete.nombre}
+                      fill
+                      className="rounded-md object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "/placeholder-product.png";
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-4 text-[#031D40]">
+                      ¿Estás seguro de eliminar el producto{" "}
+                      <strong>{productToDelete.nombre}</strong> (ID:{" "}
+                      {productToDelete.producto_id})?
+                    </p>
+                  </div>
+                </div>
+                <p className="mb-6 text-sm text-red-600">
+                  Esta acción no se puede deshacer.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={handleDeleteCancel}
+                    className="px-4 py-2 border border-[#032059] text-[#032059] rounded-lg hover:bg-[#032059]/10 transition-colors"
+                    disabled={isDeleting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className={`px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ${
+                      isDeleting ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          spin
+                          className="mr-2"
+                        />
+                        Eliminando...
+                      </>
+                    ) : (
+                      "Eliminar definitivamente"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center mb-8">
           <FontAwesomeIcon
             icon={faBoxOpen}
@@ -192,9 +282,9 @@ const ProductsPage = () => {
 
         {/* Listado de productos */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 bg-[#031D40] text-white">
+          <div className="p-4 bg-[#032059] text-white">
             <h2 className="text-xl font-semibold flex items-center">
-              <FontAwesomeIcon icon={faBoxes} className="mr-2" />
+              <FontAwesomeIcon icon={faBoxes} className="mr-2 text-[#F2B705]" />
               Listado de Productos
             </h2>
           </div>
@@ -236,13 +326,19 @@ const ProductsPage = () => {
                         {product.producto_id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Image
-                          src={product.imagenUrl}
-                          alt={product.nombre}
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
-                        />
+                        <div className="relative w-10 h-10">
+                          <Image
+                            src={product.imagenUrl}
+                            alt={product.nombre}
+                            fill
+                            className="rounded-full object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "/placeholder-product.png";
+                            }}
+                          />
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#031D40]">
                         {product.nombre}
@@ -285,7 +381,7 @@ const ProductsPage = () => {
                             <FontAwesomeIcon icon={faEdit} />
                           </button>
                           <button
-                            onClick={() => handleDelete(product.id)}
+                            onClick={() => handleDeleteConfirm(product)}
                             className="text-red-600 hover:text-red-800"
                             aria-label="Eliminar producto"
                           >

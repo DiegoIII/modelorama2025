@@ -63,7 +63,7 @@ const GastosPage: React.FC = () => {
               icon={faMoneyBillWave}
               className="text-3xl mr-3 text-[#F2B705]"
             />
-            <h1 className="text-3xl font-bold text-[#031D40]">
+            <h1 className="text-3xl font-bold text-[#032059]">
               Gestión de Gastos
             </h1>
           </div>
@@ -74,9 +74,9 @@ const GastosPage: React.FC = () => {
               onClick={() => setActiveTab("registrar")}
               className={`py-2 px-4 font-medium text-sm flex items-center ${
                 activeTab === "registrar"
-                  ? "text-[#F2B705] border-b-2 border-[#F2B705]"
-                  : "text-gray-500 hover:text-[#032059]"
-              }`}
+                  ? "text-[#032059] border-b-2 border-[#F2B705] bg-[#F2B705]/10"
+                  : "text-[#031D40] hover:text-[#032059] hover:bg-[#F2B705]/10"
+              } transition-colors duration-200`}
             >
               <FontAwesomeIcon icon={faPlus} className="mr-2" />
               Registrar Gasto
@@ -85,9 +85,9 @@ const GastosPage: React.FC = () => {
               onClick={() => setActiveTab("historial")}
               className={`py-2 px-4 font-medium text-sm flex items-center ${
                 activeTab === "historial"
-                  ? "text-[#F2B705] border-b-2 border-[#F2B705]"
-                  : "text-gray-500 hover:text-[#032059]"
-              }`}
+                  ? "text-[#032059] border-b-2 border-[#F2B705] bg-[#F2B705]/10"
+                  : "text-[#031D40] hover:text-[#032059] hover:bg-[#F2B705]/10"
+              } transition-colors duration-200`}
             >
               <FontAwesomeIcon icon={faHistory} className="mr-2" />
               Historial
@@ -96,9 +96,9 @@ const GastosPage: React.FC = () => {
               onClick={() => setActiveTab("reportes")}
               className={`py-2 px-4 font-medium text-sm flex items-center ${
                 activeTab === "reportes"
-                  ? "text-[#F2B705] border-b-2 border-[#F2B705]"
-                  : "text-gray-500 hover:text-[#032059]"
-              }`}
+                  ? "text-[#032059] border-b-2 border-[#F2B705] bg-[#F2B705]/10"
+                  : "text-[#031D40] hover:text-[#032059] hover:bg-[#F2B705]/10"
+              } transition-colors duration-200`}
             >
               <FontAwesomeIcon icon={faChartLine} className="mr-2" />
               Reportes
@@ -107,7 +107,7 @@ const GastosPage: React.FC = () => {
         </div>
 
         {/* Contenido de pestañas */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-[#031D40]/20">
           {activeTab === "registrar" && (
             <div className="p-6">
               <h2 className="text-xl font-semibold text-[#032059] mb-6 flex items-center">
@@ -136,8 +136,11 @@ const GastosPage: React.FC = () => {
 
           {activeTab === "historial" && (
             <div>
-              <div className="p-4 bg-[#031D40] text-white flex items-center">
-                <FontAwesomeIcon icon={faHistory} className="mr-2" />
+              <div className="p-4 bg-[#032059] text-white flex items-center">
+                <FontAwesomeIcon
+                  icon={faHistory}
+                  className="mr-2 text-[#F2B705]"
+                />
                 <h2 className="text-xl font-semibold">Historial de Gastos</h2>
               </div>
               <div className="p-4">
@@ -155,11 +158,11 @@ const GastosPage: React.FC = () => {
                 />
                 Reportes de Gastos
               </h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                <p className="text-blue-800">
+              <div className="bg-[#F2B705]/10 border border-[#F2B705]/30 rounded-lg p-6 text-center">
+                <p className="text-[#032059] font-medium">
                   Módulo de reportes en desarrollo
                 </p>
-                <p className="text-sm text-blue-600 mt-2">
+                <p className="text-sm text-[#031D40] mt-2">
                   Próximamente podrás ver gráficos y análisis de tus gastos
                 </p>
               </div>
@@ -169,20 +172,20 @@ const GastosPage: React.FC = () => {
 
         {/* Estadísticas rápidas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#F2B705]">
-            <h3 className="text-sm font-medium text-gray-500">
+          <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-[#F2B705] hover:shadow-lg transition-shadow">
+            <h3 className="text-sm font-medium text-[#031D40]">
               Gastos este mes
             </h3>
             <p className="text-2xl font-bold text-[#032059]">$12,345.67</p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#032059]">
-            <h3 className="text-sm font-medium text-gray-500">
+          <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-[#032059] hover:shadow-lg transition-shadow">
+            <h3 className="text-sm font-medium text-[#031D40]">
               Categoría principal
             </h3>
             <p className="text-2xl font-bold text-[#032059]">Suministros</p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#F2B705]">
-            <h3 className="text-sm font-medium text-gray-500">
+          <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-[#F2B705] hover:shadow-lg transition-shadow">
+            <h3 className="text-sm font-medium text-[#031D40]">
               Promedio diario
             </h3>
             <p className="text-2xl font-bold text-[#032059]">$411.52</p>
