@@ -36,6 +36,10 @@ const ProveedoresPage: React.FC = () => {
   const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [proveedorToDelete, setProveedorToDelete] = useState<Proveedor | null>(
+    null
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchProveedores();
@@ -62,20 +66,21 @@ const ProveedoresPage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    setIsProcessing(true);
     setError(null);
     try {
       const url = editId ? `/api/proveedores/${editId}` : "/api/proveedores";
-
       const method = editId ? "PUT" : "POST";
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(proveedor),
       });
 
-      if (!res.ok)
+      if (!res.ok) {
         throw new Error(editId ? "Error al actualizar" : "Error al crear");
+      }
 
       setProveedor({
         nombre_proveedor: "",
@@ -89,22 +94,39 @@ const ProveedoresPage: React.FC = () => {
       console.error("Error:", error);
       setError(error instanceof Error ? error.message : "Error desconocido");
     } finally {
-      setLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Estás seguro de eliminar este proveedor?")) return;
+  const confirmDelete = (prov: Proveedor) => {
+    setProveedorToDelete(prov);
+  };
 
+  const cancelDelete = () => {
+    setProveedorToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!proveedorToDelete) return;
+
+    setIsProcessing(true);
     try {
-      const res = await fetch(`/api/proveedores/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/proveedores/${proveedorToDelete.proveedor_id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
       if (!res.ok) throw new Error("Error al eliminar");
+
       fetchProveedores();
+      setProveedorToDelete(null);
     } catch (error) {
       console.error("Error:", error);
       setError(error instanceof Error ? error.message : "Error desconocido");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -138,6 +160,87 @@ const ProveedoresPage: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* Modal de confirmación para eliminar */}
+        {proveedorToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-[#032059]">
+                    Confirmar eliminación
+                  </h3>
+                  <button
+                    onClick={cancelDelete}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
+                <p className="mb-4 text-[#031D40]">
+                  ¿Estás seguro de eliminar al proveedor{" "}
+                  <strong>"{proveedorToDelete.nombre_proveedor}"</strong>?
+                </p>
+                <div className="mb-4 text-sm space-y-1">
+                  <p className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faUser}
+                      className="mr-2 text-[#032059]"
+                    />
+                    {proveedorToDelete.contacto}
+                  </p>
+                  <p className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faPhone}
+                      className="mr-2 text-[#032059]"
+                    />
+                    {proveedorToDelete.telefono}
+                  </p>
+                  <p className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faEnvelope}
+                      className="mr-2 text-[#032059]"
+                    />
+                    {proveedorToDelete.email}
+                  </p>
+                </div>
+                <p className="mb-6 text-sm text-red-600">
+                  Esta acción no se puede deshacer y afectará a los productos
+                  asociados.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="px-4 py-2 border border-[#032059] text-[#032059] rounded-lg hover:bg-[#032059]/10 transition-colors"
+                    disabled={isProcessing}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className={`px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ${
+                      isProcessing ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          spin
+                          className="mr-2"
+                        />
+                        Eliminando...
+                      </>
+                    ) : (
+                      "Eliminar definitivamente"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center mb-8">
           <FontAwesomeIcon
             icon={faTruck}
@@ -149,7 +252,7 @@ const ProveedoresPage: React.FC = () => {
         </div>
 
         {/* Formulario de proveedores */}
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#F2B705] mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-[#031D40]/20 mb-8">
           <h2 className="text-xl font-semibold text-[#032059] mb-4">
             {editId ? "Editar Proveedor" : "Agregar Nuevo Proveedor"}
           </h2>
@@ -163,7 +266,7 @@ const ProveedoresPage: React.FC = () => {
                 </label>
                 <input
                   type={type}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
+                  className="w-full p-3 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059]"
                   placeholder={placeholder}
                   value={proveedor[key as keyof typeof proveedor]}
                   onChange={(e) =>
@@ -177,10 +280,12 @@ const ProveedoresPage: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={handleSubmit}
-              disabled={loading}
-              className="bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors"
+              disabled={isProcessing}
+              className={`bg-[#032059] hover:bg-[#031D40] text-white px-6 py-3 rounded-lg flex items-center justify-center transition-colors ${
+                isProcessing ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              {loading ? (
+              {isProcessing ? (
                 <>
                   <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
                   Procesando...
@@ -216,17 +321,17 @@ const ProveedoresPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
               {error}
             </div>
           )}
         </div>
 
         {/* Listado de proveedores */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-4 bg-[#031D40] text-white">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-[#031D40]/20">
+          <div className="p-4 bg-[#032059] text-white">
             <h2 className="text-xl font-semibold flex items-center">
-              <FontAwesomeIcon icon={faTruck} className="mr-2" />
+              <FontAwesomeIcon icon={faTruck} className="mr-2 text-[#F2B705]" />
               Listado de Proveedores
             </h2>
           </div>
@@ -261,7 +366,7 @@ const ProveedoresPage: React.FC = () => {
                               </label>
                               <input
                                 type={type}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#032059] focus:border-transparent"
+                                className="w-full p-3 border border-[#031D40]/30 rounded-lg focus:ring-2 focus:ring-[#F2B705] focus:border-[#032059]"
                                 value={proveedor[key as keyof typeof proveedor]}
                                 onChange={(e) =>
                                   setProveedor({
@@ -276,7 +381,12 @@ const ProveedoresPage: React.FC = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={handleSubmit}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+                            className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors ${
+                              isProcessing
+                                ? "opacity-70 cursor-not-allowed"
+                                : ""
+                            }`}
+                            disabled={isProcessing}
                           >
                             <FontAwesomeIcon icon={faSave} className="mr-2" />
                             Guardar
@@ -300,7 +410,7 @@ const ProveedoresPage: React.FC = () => {
                             />
                             {p.nombre_proveedor}
                           </div>
-                          <div className="text-sm text-gray-600 mt-1 space-y-1">
+                          <div className="text-sm text-[#031D40]/80 mt-1 space-y-1">
                             <div className="flex items-center">
                               <FontAwesomeIcon
                                 icon={faUser}
@@ -336,7 +446,7 @@ const ProveedoresPage: React.FC = () => {
                             Editar
                           </button>
                           <button
-                            onClick={() => handleDelete(p.proveedor_id)}
+                            onClick={() => confirmDelete(p)}
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
                           >
                             <FontAwesomeIcon icon={faTrash} className="mr-2" />
@@ -348,7 +458,7 @@ const ProveedoresPage: React.FC = () => {
                   </li>
                 ))
               ) : (
-                <li className="p-8 text-center text-gray-500">
+                <li className="p-8 text-center text-[#031D40]/70">
                   No hay proveedores registrados
                 </li>
               )}
